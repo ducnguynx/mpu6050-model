@@ -1,0 +1,109 @@
+# ==============================================================================
+# MPU-6050 Behavioral Model Default Configuration
+# ==============================================================================
+# Primary mathematical model:
+#   Farrell, Silva, Rahman, & Wendel, "Inertial Measurement Unit Error Modeling
+#   Tutorial: Inertial Navigation System State Estimation with Real-Time Sensor
+#   Calibration," IEEE Control Systems Magazine, 42(6):40-66, Dec. 2022.
+#   DOI: 10.1109/MCS.2022.3209059
+#
+# Hardware specifications:
+#   InvenSense MPU-6000 and MPU-6050 Product Specification (PS-MPU-6000A-00,
+#   Rev 3.4) and Register Map (RM-MPU-6000A-00, Rev 4.2).
+#
+# All physical quantities are strictly in SI units (m/s^2, rad/s, s, Hz)
+# except full_scale_range_g (g) and full_scale_range_dps (deg/s), which mirror
+# the hardware register settings AFS_SEL and FS_SEL.
+# ==============================================================================
+
+simulation:
+  # [Configurable assumption] Sampling frequency in Hz (within datasheet ODR range
+  # 4-1000 Hz for accel / 4-8000 Hz for gyro). At 200 Hz, Nyquist BW = 100 Hz,
+  # matching MPU-6050 DLPF_CFG=2 where datasheet quotes 0.05 deg/s-rms gyro noise.
+  sample_rate_hz: 200.0
+  # [Configurable assumption] Default simulation horizon in seconds.
+  duration_s: 10.0
+  # [Configurable assumption] Deterministic RNG seed for reproducibility.
+  random_seed: 42
+  # [Farrell et al. 2022] Initialize Gauss-Markov bias state from stationary
+  # distribution N(0, sigma_gm^2) if true, or at 0.0 if false.
+  stationary_bias_init: true
+
+accelerometer:
+  # [Datasheet-sourced, PS-MPU-6000A-00 §6.2] Programmable FSR: 2, 4, 8, or 16 g.
+  # Nominal sensitivity: 16384, 8192, 4096, 2048 LSB/g respectively (16-bit ADC).
+  full_scale_range_g: 2
+
+  # [Configurable assumption within Datasheet bound] Initial sensitivity tolerance
+  # is +/-3% (+/-0.03) at 25 degC. Dimensionless fractional scale-factor error [x, y, z].
+  scale_factor_error: [0.005, -0.004, 0.006]
+
+  # [Configurable assumption within Datasheet bound] Cross-axis sensitivity is
+  # +/-2% (+/-0.02). 3x3 matrix with zero diagonal entries.
+  misalignment:
+    - [0.0, 0.005, -0.003]
+    - [-0.004, 0.0, 0.005]
+    - [0.003, -0.005, 0.0]
+
+  # [Configurable assumption within Datasheet bound] Initial Zero-G tolerance is
+  # +/-50 mg (+/-0.490 m/s^2) on X,Y and +/-80 mg (+/-0.785 m/s^2) on Z. Units: m/s^2.
+  static_bias_mps2: [0.15, -0.12, 0.25]
+
+  # [Derived from Datasheet, PS-MPU-6000A-00 §6.2] Single-sided PSD = 400 ug/sqrt(Hz)
+  # = 3.92266e-3 (m/s^2)/sqrt(Hz). Two-sided VRW N_a = NSD_1s / sqrt(2) = 2.77374e-3.
+  noise_density_mps2_per_sqrthz: [0.00277374, 0.00277374, 0.00277374]
+
+  # [Configurable assumption] Bias instability B_a in m/s^2 (not published in
+  # datasheet; consistent with MPU-6000/6050 Allan variance studies).
+  bias_instability_mps2: [0.0015, 0.0015, 0.0020]
+
+  # [Configurable assumption] First-order Gauss-Markov correlation time T_B in seconds.
+  bias_correlation_time_s: [100.0, 100.0, 100.0]
+
+  # [Configurable assumption] Acceleration random walk (bias drift) K_a in (m/s^2)/sqrt(s).
+  # Set to [0.0, 0.0, 0.0] to disable long-term unbounded bias drift.
+  random_walk_mps2_per_sqrts: [0.0001, 0.0001, 0.00015]
+
+  # [Datasheet-sourced hardware behavior] Output clipping at +/-FSR and 16-bit ADC quantization.
+  enable_saturation: true
+  enable_quantization: true
+
+gyroscope:
+  # [Datasheet-sourced, PS-MPU-6000A-00 §6.1] Programmable FSR: 250, 500, 1000, or 2000 deg/s.
+  # Nominal sensitivity: 131.0, 65.5, 32.8, 16.4 LSB/(deg/s) respectively (16-bit ADC).
+  full_scale_range_dps: 250
+
+  # [Configurable assumption within Datasheet bound] Initial sensitivity tolerance
+  # is +/-3% (+/-0.03) at 25 degC. Dimensionless fractional scale-factor error [x, y, z].
+  scale_factor_error: [0.008, -0.006, 0.007]
+
+  # [Configurable assumption within Datasheet bound] Cross-axis sensitivity is
+  # +/-2% (+/-0.02). 3x3 matrix with zero diagonal entries.
+  misalignment:
+    - [0.0, 0.004, -0.003]
+    - [-0.005, 0.0, 0.004]
+    - [0.003, -0.004, 0.0]
+
+  # [Configurable assumption within Datasheet bound] Initial Zero-Rate Output (ZRO)
+  # tolerance is +/-20 deg/s (+/-0.349 rad/s) at 25 degC. Units: rad/s.
+  static_bias_radps: [0.015, -0.010, 0.018]
+
+  # [Derived from Datasheet, PS-MPU-6000A-00 §6.1] Single-sided NSD = 0.005 (deg/s)/sqrt(Hz)
+  # = 8.726646e-5 (rad/s)/sqrt(Hz). Two-sided ARW N_g = NSD_1s / sqrt(2) = 6.170671e-5.
+  # At f_s = 200 Hz, discrete RMS noise is exactly 0.05 deg/s-rms (datasheet Total RMS Noise).
+  noise_density_radps_per_sqrthz: [6.170671e-5, 6.170671e-5, 6.170671e-5]
+
+  # [Configurable assumption] Bias instability B_g in rad/s (not published in datasheet;
+  # X and Z set to 2x Y reflecting Rudyk et al. 2020 MPU-6050 characterization).
+  bias_instability_radps: [1.2e-4, 6.0e-5, 1.2e-4]
+
+  # [Configurable assumption] First-order Gauss-Markov correlation time T_B in seconds.
+  bias_correlation_time_s: [100.0, 100.0, 100.0]
+
+  # [Configurable assumption] Rate random walk (bias drift) K_g in (rad/s)/sqrt(s).
+  # Set to [0.0, 0.0, 0.0] to disable long-term unbounded bias drift.
+  random_walk_radps_per_sqrts: [1.0e-5, 1.0e-5, 1.0e-5]
+
+  # [Datasheet-sourced hardware behavior] Output clipping at +/-FSR and 16-bit ADC quantization.
+  enable_saturation: true
+  enable_quantization: true
