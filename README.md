@@ -10,7 +10,9 @@ Mô hình kết hợp 2 nguồn chuẩn:
 ### 1.2. Ý tưởng 
 Đưa vào **tín hiệu chuyển động lý tưởng** $\mathbf{u}_k$ (gia tốc riêng tính bằng $\text{m/s}^2$, hoặc vận tốc góc tính bằng $\text{rad/s}$). Bộ mô phỏng sẽ cộng thêm đúng các sai số thực tế của MPU-6050 theo phương trình:
 
-$$\tilde{\mathbf{u}}_k^{\text{analog}} = \underbrace{(\mathbf{I}_3 + \mathbf{S} + \mathbf{M})\,\mathbf{u}_k + \mathbf{b}_0}_{\text{Sai số tất định (cố định)}} + \underbrace{\mathbf{v}_{N,k} + \mathbf{x}_{B,k} + \mathbf{x}_{K,k}}_{\text{Nhiễu ngẫu nhiên \& trôi theo thời gian}}$$
+$$
+\tilde{\mathbf{u}}_k^{\text{analog}} = \underbrace{(\mathbf{I}_3 + \mathbf{S} + \mathbf{M})\thinspace \mathbf{u}_k + \mathbf{b}_0}_{\text{Sai số tất định (cố định)}} + \underbrace{\mathbf{v}_{N,k} + \mathbf{x}_{B,k} + \mathbf{x}_{K,k}}_{\text{Nhiễu ngẫu nhiên và trôi theo thời gian}}
+$$
 
 Sau đó tín hiệu đi qua **tầng phần cứng của MPU-6050**:
 1. **Bão hòa (Saturation):** Cắt ngọn tín hiệu nếu vượt quá dải đo (Full-Scale Range).
@@ -22,18 +24,18 @@ Mọi tính toán bên trong đều dùng **hệ đơn vị SI** ($\text{m/s}^2$
 
 | Thành phần / Tham số | Ký hiệu | Ý nghĩa dễ hiểu | Nguồn gốc |
 |---|---|---|---|
-| **Dải đo & Độ nhạy ADC** (`full_scale_range_*`) | $\text{FSR}, S_{\text{nom}}$ | Giới hạn đo ($\pm 2/4/8/16\,g$; $\pm 250/500/1000/2000\,s$) và bước lượng tử 16-bit (`16384 LSB/g`, `131 LSB/(°/s)`...). | **Datasheet MPU-6050** |
-| **Nhiễu trắng băng rộng** (`noise_density_*`) | $N$ ($\mathbf{v}_N$) | Độ rung ngẫu nhiên nhanh ở từng mẫu đo (gây ARW / VRW). Sinh từ phân phối chuẩn $\mathcal{N}(0, N^2 f_s)$, độc lập giữa các mẫu. | **Suy ra trực tiếp từ Datasheet** ($400\,\mu g/\sqrt{\text{Hz}}$ và $0.005\,(^\circ/\text{s})/\sqrt{\text{Hz}}$ chia $\sqrt{2}$) |
-| **Sai số hệ số tỉ lệ** (`scale_factor_error`) | $\mathbf{S}$ | "Thước đo" của từng trục bị co/giãn nhẹ (vd $+0.5\%$). | **Giả định cấu hình được**, nằm trong dung sai Datasheet ($\pm 3\%$) |
-| **Lệch trục / Xuyên trục** (`misalignment`) | $\mathbf{M}$ | 3 trục X, Y, Z không vuông góc tuyệt đối $90^\circ$ nên chuyển động trục này rò nhẹ sang trục khác. | **Giả định cấu hình được**, nằm trong dung sai Datasheet ($\pm 2\%$) |
-| **Độ lệch tĩnh (Bias)** (`static_bias_*`) | $\mathbf{b}_0$ | Sai số lệch điểm 0 cố định ngay cả khi cảm biến đứng yên. | **Giả định cấu hình được**, nằm trong dung sai Datasheet ($\pm 50/80\,\text{mg}$; $\pm 20\,s$) |
+| **Dải đo & Độ nhạy ADC** (`full_scale_range_*`) | $\text{FSR}, S_{\text{nom}}$ | Giới hạn đo (±2/4/8/16 g; ±250/500/1000/2000 °/s) và bước lượng tử 16-bit (`16384 LSB/g`, `131 LSB/(°/s)`...). | **Datasheet MPU-6050** |
+| **Nhiễu trắng băng rộng** (`noise_density_*`) | $N$ ($\mathbf{v}_N$) | Độ rung ngẫu nhiên nhanh ở từng mẫu đo (gây ARW / VRW). Sinh từ phân phối chuẩn $\mathcal{N}(0, N^2 f_s)$, độc lập giữa các mẫu. | **Suy ra trực tiếp từ Datasheet** ($400\text{ }\mu g/\sqrt{\text{Hz}}$ và $0.005\text{ (deg/s)}/\sqrt{\text{Hz}}$ chia $\sqrt{2}$) |
+| **Sai số hệ số tỉ lệ** (`scale_factor_error`) | $\mathbf{S}$ | "Thước đo" của từng trục bị co/giãn nhẹ (vd +0.5%). | **Giả định cấu hình được**, nằm trong dung sai Datasheet (±3%) |
+| **Lệch trục / Xuyên trục** (`misalignment`) | $\mathbf{M}$ | 3 trục X, Y, Z không vuông góc tuyệt đối 90° nên chuyển động trục này rò nhẹ sang trục khác. | **Giả định cấu hình được**, nằm trong dung sai Datasheet (±2%) |
+| **Độ lệch tĩnh (Bias)** (`static_bias_*`) | $\mathbf{b}_0$ | Sai số lệch điểm 0 cố định ngay cả khi cảm biến đứng yên. | **Giả định cấu hình được**, nằm trong dung sai Datasheet (±50/80 mg; ±20 °/s) |
 | **Bất ổn định bias** (`bias_instability_*`, `bias_correlation_time_s`) | $B, T_B$ ($\mathbf{x}_B$) | Điểm 0 dao động chậm theo thời gian nhưng có giới hạn. Mô hình hóa bằng quá trình **Gauss–Markov bậc 1**: $x_B[k+1] = e^{-\Delta t/T_B} x_B[k] + w_B[k]$. | **Giả định cấu hình được** (Datasheet không công bố; tham khảo nghiên cứu Allan Variance trên MPU-6050) |
 | **Trôi ngẫu nhiên dài hạn** (`random_walk_*`) | $K$ ($\mathbf{x}_K$) | Độ trôi cộng dồn chậm theo thời gian (**Random Walk**): $x_K[k+1] = x_K[k] + w_K[k]$. Có thể đặt bằng `0` nếu không muốn trôi vô hạn. | **Giả định cấu hình được** (Datasheet không công bố) |
 | **Hạt giống ngẫu nhiên** (`random_seed`) | — | Số nguyên (vd `42`) giúp tái lập **chính xác cùng một chuỗi nhiễu** mỗi lần chạy để so sánh công bằng các bộ lọc. | **Giả định cấu hình được** |
 
 ### 1.4. Kiểm chứng mô hình
 Mô hình đã được kiểm chứng định lượng (chi tiết xem [docs/validation_report.md](docs/validation_report.md)):
-- **Nhiễu RMS băng rộng tại $f_s = 200\,\text{Hz}$ (băng thông Nyquist $100\,\text{Hz}$):** Con quay đạt $0.05006\,s-rms$ so với $0.05000\,s-rms$ trong datasheet (sai lệch **0.12%**); gia tốc kế đạt $4.005\,\text{mg-rms}$ so với $4.000\,\text{mg-rms}$ (sai lệch **0.12%**).
+- **Nhiễu RMS băng rộng tại $f_s = 200\text{ Hz}$ (băng thông Nyquist 100 Hz):** Con quay đạt 0.05006 °/s-rms so với 0.05000 °/s-rms trong datasheet (sai lệch **0.12%**); gia tốc kế đạt 4.005 mg-rms so với 4.000 mg-rms (sai lệch **0.12%**).
 - **Đường cong Allan Deviation (chạy tĩnh 1 giờ):** Khớp công thức lý thuyết của Farrell (2022) & El-Sheimy (2008) với sai số trung bình **1.25%** (gyro) và **2.05%** (accel).
 
 ---
