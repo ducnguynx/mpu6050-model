@@ -16,10 +16,10 @@ This document records the academic papers, IEEE standards, and official manufact
 - **Model Scope:**
   - Unified continuous-time and exact discrete-time behavioral error model for both 3-axis accelerometers and 3-axis gyroscopes.
   - Explicit deterministic error terms: scale-factor error, cross-axis / non-orthogonality misalignment, and constant turn-on bias.
-  - Explicit stochastic error terms: broadband white measurement noise (ARW/VRW), first-order Gauss–Markov process for time-correlated bias instability ($T_B, S_B$), and rate/acceleration random walk ($K$).
-  - Exact continuous-to-discrete state-space conversion: $\mathbf{A}_d = \exp(\mathbf{F}\Delta t)$ and $\mathbf{Q}_d = \int_0^{\Delta t} \exp(\mathbf{F}\tau)\mathbf{G}\mathbf{Q}_c\mathbf{G}^T\exp(\mathbf{F}^T\tau)\thinspace d\tau$.
+  - Explicit stochastic error terms: broadband white measurement noise (ARW/VRW), first-order Gauss–Markov process for time-correlated bias instability ($`T_B, S_B`$), and rate/acceleration random walk ($`K`$).
+  - Exact continuous-to-discrete state-space conversion: $`\mathbf{A}_d = \exp(\mathbf{F}\Delta t)`$ and $`\mathbf{Q}_d = \int_0^{\Delta t} \exp(\mathbf{F}\tau)\mathbf{G}\mathbf{Q}_c\mathbf{G}^T\exp(\mathbf{F}^T\tau)\thinspace d\tau`$.
   - Exact analytical Allan Variance (AV) / Allan Standard Deviation (ASD) formulas linking time-series stochastic simulation outputs back to model parameters.
-- **MATLAB Implementation Availability:** Yes. The authors maintain an open-source MATLAB repository (`jaffarrell/AV-Matlab-SW`) implementing continuous-to-discrete state-space conversion, discrete-time stochastic error sequence generation ($x_{k+1} = A_d x_k + w_k$, $z_k = C_d x_k + v_k$), and Allan variance verification routines.
+- **MATLAB Implementation Availability:** Yes. The authors maintain an open-source MATLAB repository (`jaffarrell/AV-Matlab-SW`) implementing continuous-to-discrete state-space conversion, discrete-time stochastic error sequence generation ($`x_{k+1} = A_d x_k + w_k`$, $`z_k = C_d x_k + v_k`$), and Allan variance verification routines.
 
 ---
 
@@ -31,7 +31,7 @@ This document records the academic papers, IEEE standards, and official manufact
 - **Publication:** *IEEE Transactions on Instrumentation and Measurement*, Vol. 57, No. 1, pp. 140–149, January 2008
 - **DOI:** `10.1109/TIM.2007.908635`
 - **URL:** https://doi.org/10.1109/TIM.2007.908635
-- **Role in Project:** Foundational IEEE benchmark establishing the overlapping Allan variance estimator and analytical log-log slope signatures for Quantization Noise ($Q$, slope $-1$), Angle/Velocity Random Walk ($N$, slope $-1/2$), Bias Instability ($B$, slope $0$, $\sigma_A \approx 0.664 B$), Rate/Acceleration Random Walk ($K$, slope $+1/2$), and Gauss–Markov exponentially correlated noise (peak at $\tau = 1.89\thinspace T_c$). Used for validation of the simulated stochastic processes.
+- **Role in Project:** Foundational IEEE benchmark establishing the overlapping Allan variance estimator and analytical log-log slope signatures for Quantization Noise ($`Q`$, slope $`-1`$), Angle/Velocity Random Walk ($`N`$, slope $`-1/2`$), Bias Instability ($`B`$, slope $`0`$, $`\sigma_A \approx 0.664 B`$), Rate/Acceleration Random Walk ($`K`$, slope $`+1/2`$), and Gauss–Markov exponentially correlated noise (peak at $`\tau = 1.89\thinspace T_c`$). Used for validation of the simulated stochastic processes.
 - **MATLAB Implementation Availability:** Standard overlapping Allan variance algorithms are widely implemented in MATLAB (e.g., `allanvar` in Navigation Toolbox) and replicated in Farrell et al. (2022).
 
 ### IEEE Std 952-1997
@@ -46,7 +46,7 @@ $$
 \sigma^2(\tau) = 4 \int_0^\infty S_\omega(f) \frac{\sin^4(\pi f \tau)}{(\pi f \tau)^2}\thinspace df
 $$
 
-and standardized definitions of random walk ($N$), bias instability ($B$), rate random walk ($K$), and quantization noise ($Q$).
+and standardized definitions of random walk ($`N`$), bias instability ($`B`$), rate random walk ($`K`$), and quantization noise ($`Q`$).
 
 ### Li, Yu, Zheng, & Mourikis (2014)
 - **Title:** *High-Fidelity Sensor Modeling and Self-Calibration in Vision-Aided Inertial Navigation*
@@ -85,7 +85,7 @@ and standardized definitions of random walk ($N$), bias instability ($B$), rate 
 - **Document Number:** `PS-MPU-6000A-00`, Revision 3.4
 - **Publisher:** InvenSense Inc. (now TDK InvenSense)
 - **Release Date:** August 19, 2013
-- **Role in Project:** Primary authoritative source for MPU-6050 hardware parameters: programmable full-scale ranges (FSR), 16-bit ADC word length, nominal sensitivity scale factors (LSB/g and LSB/(°/s)), initial sensitivity tolerance (±3%), cross-axis sensitivity (±2%), nonlinearity (0.2%), initial zero-$g$ tolerance (±50 mg X/Y, ±80 mg Z), initial zero-rate tolerance (±20 °/s), accelerometer noise PSD ($400\text{ }\mu g/\sqrt{\text{Hz}}$), gyroscope rate noise spectral density ($0.005\text{ (deg/s)}/\sqrt{\text{Hz}}$), gyroscope total RMS noise (0.05 °/s-rms at 100 Hz BW), and output data rate ranges.
+- **Role in Project:** Primary authoritative source for MPU-6050 hardware parameters: programmable full-scale ranges (FSR), 16-bit ADC word length, nominal sensitivity scale factors (LSB/g and LSB/(°/s)), initial sensitivity tolerance (±3%), cross-axis sensitivity (±2%), nonlinearity (0.2%), initial zero-$`g`$ tolerance (±50 mg X/Y, ±80 mg Z), initial zero-rate tolerance (±20 °/s), accelerometer noise PSD ($`400\text{ }\mu g/\sqrt{\text{Hz}}`$), gyroscope rate noise spectral density ($`0.005\text{ (deg/s)}/\sqrt{\text{Hz}}`$), gyroscope total RMS noise (0.05 °/s-rms at 100 Hz BW), and output data rate ranges.
 
 ### MPU-6000 and MPU-6050 Register Map and Descriptions (Rev 4.2)
 - **Title:** *MPU-6000 and MPU-6050 Register Map and Descriptions*
@@ -102,7 +102,7 @@ and standardized definitions of random walk ($N$), bias instability ($B$), rate 
 |---|---|---|---|---|
 | **IEEE Peer-Reviewed** | Yes (IEEE Control Systems Magazine) | Yes (IEEE Trans. Instrum. Meas.) | Yes (IEEE ICRA) | No (MDPI Sensors) |
 | **Accelerometer & Gyroscope Models** | Both, unified formulation | Both (analysis focus) | Both (coupled with camera EKF) | Both (MPU-6000 via NaveGo) |
-| **Explicit Discrete-Time Simulation Equations** | Yes (exact $A_d, Q_d$ state-space) | Partial (focuses on AV extraction) | Partial (filter measurement model) | Yes (NaveGo MATLAB toolbox) |
+| **Explicit Discrete-Time Simulation Equations** | Yes (exact $`A_d, Q_d`$ state-space) | Partial (focuses on AV extraction) | Partial (filter measurement model) | Yes (NaveGo MATLAB toolbox) |
 | **Deterministic + Stochastic Errors** | Yes (scale factor, misalignment, bias, white noise, Gauss–Markov, random walk) | Stochastic only (AV decomposition) | Yes (calibration focus) | Yes |
 | **Public MATLAB Source Code** | Yes (`jaffarrell/AV-Matlab-SW`) | No official repo | No | Yes (`rodralez/navego`) |
 | **Decoupled from State Estimation / Filtering** | Yes (standalone forward sensor model + AV verification) | Yes | No (tightly coupled to VINS) | Coupled to 15-state INS/GNSS EKF |
