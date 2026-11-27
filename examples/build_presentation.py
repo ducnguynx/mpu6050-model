@@ -499,13 +499,14 @@ def build_deck() -> Path:
         fontsize=14.0,
     )
     f_kalman = render_formula(
-        "kalman_2state",
+        "kalman_4state",
         [
-            r"$\theta_k = \theta_{k-1} + (\tilde{\omega}_{x,k} - b_{g,k-1})\,\Delta t + w_{\theta,k}$",
-            r"$b_{g,k} = b_{g,k-1} + w_{b,k}, \qquad y_k = \theta_{\mathrm{acc,cal}}[k] = \theta_k + v_k$",
-            r"$v_k \sim \mathcal{N}(0, \hat{R}_\theta), \quad Q_{11} = \hat{N}_g^2\Delta t + \frac{1}{3}\hat{q}_b\Delta t^2, \quad Q_{12} = -\frac{1}{2}\hat{q}_b\Delta t, \quad Q_{22} = \hat{q}_{B,g} + \hat{q}_{K,g}$",
+            r"$\mathbf{x}_k = [u_k,\ \dot{u}_k,\ \ddot{u}_k,\ b_k]^T = [\theta_k,\ \dot{\theta}_k,\ \ddot{\theta}_k,\ b_{g,k}]^T$",
+            r"$u_k = u_{k-1} + \dot{u}_{k-1}\Delta t + \frac{1}{2}\ddot{u}_{k-1}\Delta t^2 + w_{u,k}, \quad \dot{u}_k = \dot{u}_{k-1} + \ddot{u}_{k-1}\Delta t + w_{\dot{u},k}$",
+            r"$\ddot{u}_k = \ddot{u}_{k-1} + w_{\ddot{u},k}, \quad b_k = b_{k-1} + w_{b,k} \quad (\hat{q}_b = \hat{q}_{B,g} + \hat{q}_{K,g})$",
+            r"$\mathbf{y}_k = [\theta_{\mathrm{acc,cal}}[k],\ \tilde{\omega}_{x,k}]^T = [u_k,\ \dot{u}_k + b_k]^T + \mathbf{v}_k, \quad \mathbf{R} = \mathrm{diag}(\hat{R}_\theta, \hat{R}_\omega)$",
         ],
-        fontsize=13.5,
+        fontsize=12.2,
     )
     f_appendix_math = render_formula(
         "appendix_math",
@@ -559,7 +560,7 @@ def build_deck() -> Path:
     p = tf.paragraphs[0]
     p.line_spacing = 1.25
     r = p.add_run()
-    r.text = "Nhận dạng Nhiễu Hộp đen & So sánh Bộ lọc Bù Tối ưu kiểu Wiener với Bộ lọc Kalman 2 Trạng thái"
+    r.text = "Nhận dạng Nhiễu Hộp đen & So sánh Bộ lọc Bù Tối ưu kiểu Wiener với Bộ lọc Kalman 4 Trạng thái [u, u', u'', b]ᵀ"
     r.font.name = FONT_NAME
     r.font.size = Pt(20)
     r.font.color.rgb = DARK_TEXT
@@ -602,7 +603,7 @@ def build_deck() -> Path:
     agenda_items = [
         ("01", "Bài toán Vật lý & Mô hình MPU-6050", "Tại sao cần Hợp nhất cảm biến, kiểm chứng tuyến tính hóa góc nhỏ & nguyên tắc hộp đen"),
         ("02", "Kiểm định Giả thiết & Nhận dạng Nhiễu có Sai số", "Kiểm định 5 giả thiết thống kê, Welch PSD & Allan Deviation (Levenberg–Marquardt)"),
-        ("03", "Thiết kế Baseline & 2 Phương án Lọc", "Baselines bắt buộc vs. Optimal Wiener Complementary (miền tần số) vs. Kalman 2 trạng thái"),
+        ("03", "Thiết kế Baseline & 2 Phương án Lọc", "Baselines bắt buộc vs. Optimal Wiener Complementary (miền tần số) vs. Kalman 4 trạng thái [u, u', u'', b]ᵀ"),
         ("04", "Đánh giá Định lượng & Chẩn đoán Nội bộ", "4 kịch bản, NIS/Ljung–Box không cần ground truth, Monte Carlo & Stress-test độ bền vững"),
         ("05", "Thảo luận, Kết luận & Hướng Mở rộng", "So sánh trực diện Wiener vs. Kalman, khuyến nghị ứng dụng thực tế & nâng cấp tương lai"),
     ]
@@ -815,7 +816,7 @@ def build_deck() -> Path:
             ["Baseline 0b\n(Bắt buộc)", "Raw Gyro Integration", "Mốc đơn cảm biến — mượt ngắn hạn nhưng trôi vô hạn."],
             ["Baseline 1\n(Bắt buộc)", "Fixed Complementary\n(α = 0.96, fc ≈ 1.33 Hz)", "Baseline hợp nhất kinh điển — chọn α kinh nghiệm, không tối ưu phổ."],
             ["Phương án 1\n(Chính)", "Optimal Wiener\nComplementary Filter", "Tối ưu MMSE miền tần số tính trực tiếp từ PSD tĩnh (kèm bản nhân quả ωc*)."],
-            ["Phương án 2\n(Chính)", "Kalman 2 Trạng thái\nx = [θ_k, b_g,k]^T", "Đệ quy thời gian thực, tự ước lượng bias gyro online & có kiểm định NIS."],
+            ["Phương án 2\n(Chính)", "Kalman 4 Trạng thái\nx = [u, u', u'', b]^T", "Động học CA + bias gyro, hợp nhất đo 2D (Accel+Gyro), tinh chỉnh q_u bằng MLE & NIS."],
         ],
         col_widths=[1.45, 2.05, 3.25],
         font_size=10.8,
@@ -959,66 +960,66 @@ def build_deck() -> Path:
     )
 
     # ==========================================================================
-    # MAIN SLIDE 8 / 14: Method 2 — 2-State Kalman Filter
+    # MAIN SLIDE 8 / 14: Method 2 — 4-State Kalman Filter [u, u', u'', b]^T
     # ==========================================================================
-    s8 = new_content_slide(prs, "3. Phương án 2: Bộ lọc Kalman 2 Trạng thái [θ_k, b_g,k]^T", "8")
+    s8 = new_content_slide(prs, "3. Phương án 2: Bộ lọc Kalman 4 Trạng thái x_k = [u_k, u'_k, u''_k, b_k]^T", "8")
     add_card(
         s8,
         0.40,
         1.05,
-        7.05,
+        7.35,
         4.65,
-        title="Mô hình Không gian Trạng thái (100% từ Tham số Nhận dạng Bước 2)",
+        title="Mô hình Không gian Trạng thái CA + Bias (Hợp nhất Đo 2D Accel + Gyro)",
         title_color=BLUE_ACCENT,
         fill_color=BLUE_TINT,
         border_color=BLUE_ACCENT,
         accent_bar_color=BLUE_ACCENT,
         bullets=[
-            ("Trạng thái ước lượng đồng thời", "Góc nghiêng thực θ_k [rad] và tổng bias con quay b_g,k = b0 + xB + xK [rad/s]."),
-            ("Không cần chỉnh tay siêu tham số", "Toàn bộ R̂_θ, N̂_g, q̂_B, q̂_K được nạp trực tiếp từ nhận dạng hộp đen Bước 2."),
+            ("4 biến trạng thái vật lý", "u_k = góc Roll θ_k; u'_k = tốc độ góc θ̇_k; u''_k = gia tốc góc θ̈_k; b_k = tổng bias gyro."),
+            ("Đo 2D y_k = [θ_acc, ω̃_x]ᵀ", "H = [[1,0,0,0], [0,1,0,1]], R = diag(R̂_θ, R̂_ω), Q = blkdiag(q_u·Q_CA, q̂_B + q̂_K)."),
         ],
-        font_size=11.8,
+        font_size=11.2,
     )
-    add_picture_fitted(s8, f_kalman, 0.62, 2.85, 6.65, 2.75)
+    add_picture_fitted(s8, f_kalman, 0.55, 2.55, 7.08, 3.05)
 
     add_card(
         s8,
-        7.68,
+        7.95,
         1.05,
-        5.25,
+        4.98,
         1.45,
-        title="1. Tính Quan sát được Hoàn toàn",
+        title="1. Quan sát được Toàn hạng (Rank = 4)",
         title_color=BLUE_ACCENT,
         accent_bar_color=BLUE_ACCENT,
         bullets=[
-            "det([H; HF]) = −Δt ≠ 0 ⇒ rank = 2.",
-            "Bias ẩn b_g,k hội tụ chính xác chỉ sau ~8 giây.",
+            "Hàng 1 đo u_k → xác định u'_k, u''_k; hàng 2 đo u'_k + b_k → tách hoàn toàn bias b_k.",
+            "F₄₄ = 1 tránh kéo co (shrinkage) bias nhiệt về 0.",
         ],
-        font_size=11.5,
-        title_size=13.0,
+        font_size=11.0,
+        title_size=12.6,
     )
     add_card(
         s8,
-        7.68,
+        7.95,
         2.65,
-        5.25,
+        4.98,
         1.52,
-        title="2. Vì sao F₂₂ = 1 (thay vì ϕ̂_B < 1)?",
+        title="2. Tinh chỉnh q_u bằng Gyro-MLE (0 Ground Truth)",
         title_color=HUST_RED,
         fill_color=RED_TINT,
         accent_bar_color=HUST_RED,
         bullets=[
-            "Tổng bias chứa thành phần hằng/nhiệt khác 0.",
-            "F₂₂ = 1 + khuếch tán q̂_b = q̂_B + q̂_K tránh kéo co (shrinkage) bias về 0.",
+            "Cực đại hóa log-likelihood phần dư kênh gyro (ν_g, S_gg).",
+            "Khớp đúng động học xoay & hoàn toàn miễn nhiễm rung động ngang trên gia tốc kế!",
         ],
-        font_size=11.3,
-        title_size=13.0,
+        font_size=11.0,
+        title_size=12.4,
     )
     add_card(
         s8,
-        7.68,
+        7.95,
         4.32,
-        5.25,
+        4.98,
         1.38,
         title="3. Ổn định số & Thời gian thực",
         title_color=GREEN_ACCENT,
@@ -1026,10 +1027,10 @@ def build_deck() -> Path:
         accent_bar_color=GREEN_ACCENT,
         bullets=[
             "Cập nhật hiệp phương sai dạng Joseph đối xứng dương.",
-            "Tốc độ 0.010 ms/mẫu (nhanh hơn chu kỳ 5 ms tới 500×).",
+            "Tốc độ 0.015 ms/mẫu (nhanh hơn chu kỳ 5 ms > 340×).",
         ],
-        font_size=11.3,
-        title_size=13.0,
+        font_size=11.0,
+        title_size=12.6,
     )
 
     add_banner_note(
@@ -1038,10 +1039,10 @@ def build_deck() -> Path:
         5.88,
         12.53,
         0.65,
-        "Ưu thế kiến trúc của Kalman 2 trạng thái: Xử lý trực tuyến từng mẫu từ t = 0, xuất kèm dải bất định ±1.96√P_θθ và phần dư Innovation (ν_k, S_k) để tự chẩn đoán sức khỏe bộ lọc không cần ground truth.",
+        "Ưu thế của Kalman 4 trạng thái [u, u', u'', b]ᵀ: Lọc mượt đồng thời góc θ, vận tốc góc ω, gia tốc góc & bias gyro trực tuyến từ t = 0, xuất dải ±1.96√P và NIS/2 tự chẩn đoán không cần ground truth.",
         fill=BLUE_TINT,
         accent=BLUE_ACCENT,
-        font_size=11.5,
+        font_size=11.3,
     )
 
     # ==========================================================================
@@ -1119,7 +1120,7 @@ def build_deck() -> Path:
     add_kpi_card(s10, 9.10, 1.02, 3.83, 1.02, label="Baseline: Raw Accel (atan2)", value="6.089° ± 0.004°", sub="Hỏng hoàn toàn do rung 4 Hz (góc giả ±10°)", accent=MUTED_TEXT, fill=LIGHT_BG)
     add_kpi_card(s10, 9.10, 2.15, 3.83, 1.02, label="Baseline: Fixed CF (α = 0.96)", value="1.886° ± 0.001°", sub="Vẫn lọt rung ±2.8° do fc = 1.33 Hz quá cao", accent=AMBER_ACCENT, fill=AMBER_TINT)
     add_kpi_card(s10, 9.10, 3.28, 3.83, 1.05, label="PA 1: Optimal Wiener CF (Freq)", value="0.088° ± 0.002°", sub="Giảm 69× so với Accel | Tốt hơn CF 21×", accent=GREEN_ACCENT, fill=GREEN_TINT)
-    add_kpi_card(s10, 9.10, 4.44, 3.83, 1.05, label="PA 2: Kalman 2 Trạng thái", value="0.294° ± 0.003°", sub="Giảm 21× so với Accel | NIS = 706 cảnh báo rung!", accent=BLUE_ACCENT, fill=BLUE_TINT)
+    add_kpi_card(s10, 9.10, 4.44, 3.83, 1.05, label="PA 2: Kalman 4 Trạng thái", value="0.284° ± 0.003°", sub="Giảm 21.4× so với Accel | NIS/2 = 353 cảnh báo rung!", accent=BLUE_ACCENT, fill=BLUE_TINT)
 
     add_banner_note(
         s10,
@@ -1142,7 +1143,7 @@ def build_deck() -> Path:
     add_kpi_card(s11, 9.10, 1.02, 3.83, 0.98, label="Baseline: Raw Gyro Integration", value="48.39° (cuối 84.5°)", sub="Trôi góc tuyến tính không kiểm soát", accent=HUST_RED, fill=RED_TINT)
     add_kpi_card(s11, 9.10, 2.10, 3.83, 0.98, label="PA 1b: Wiener Nhân quả bậc 1", value="2.080° ± 0.028°", sub="Lệch tĩnh đúng lý thuyết b_g / ωc* ≈ 2.10°", accent=AMBER_ACCENT, fill=AMBER_TINT)
     add_kpi_card(s11, 9.10, 3.18, 3.83, 0.98, label="PA 1a: Wiener Miền tần số", value="0.101° ± 0.002°", sub="H_gyr(0)=0 chặn DC (chỉ còn hiệu ứng biên nhẹ)", accent=GREEN_ACCENT, fill=GREEN_TINT)
-    add_kpi_card(s11, 9.10, 4.26, 3.83, 1.02, label="PA 2: Kalman 2 Trạng thái", value="0.068° ± 0.001°", sub="Tốt nhất! Khóa b̂_g = 0.02314 vs thật 0.02300", accent=BLUE_ACCENT, fill=BLUE_TINT)
+    add_kpi_card(s11, 9.10, 4.26, 3.83, 1.02, label="PA 2: Kalman 4 Trạng thái", value="0.062° ± 0.002°", sub="Tốt nhất! Khóa b̂_k = 0.02312 vs thật 0.02300", accent=BLUE_ACCENT, fill=BLUE_TINT)
 
     add_banner_note(
         s11,
@@ -1168,12 +1169,12 @@ def build_deck() -> Path:
         1.02,
         4.78,
         2.62,
-        headers=["Kịch bản", "NIS trung bình", "LB p", "Chẩn đoán"],
+        headers=["Kịch bản", "NIS/2 TB", "LB p", "Chẩn đoán"],
         rows=[
-            ["S1: Tĩnh", "1.032 ✅", "0.100", "Nhất quán chuẩn"],
-            ["S2: Sin 12°", "1.260 ⚠️", "0.000", "Lộ sai số tỉ lệ ẩn"],
-            ["S3: Rung 4Hz", "706.1 🚨", "0.000", "Cảnh báo rung ngang"],
-            ["S4: 180 s", "1.139", "0.000", "Khóa bias 0.6% err"],
+            ["S1: Tĩnh", "1.002 ✅", "0.100", "Nhất quán chuẩn"],
+            ["S2: Sin 12°", "1.112 ⚠️", "0.000", "Lộ sai số tỉ lệ ẩn"],
+            ["S3: Rung 4Hz", "353.4 🚨", "0.000", "Cảnh báo rung ngang"],
+            ["S4: 180 s", "1.064", "0.000", "Khóa bias 0.5% err"],
         ],
         col_widths=[1.22, 1.15, 0.72, 1.69],
         font_size=9.8,
@@ -1191,9 +1192,9 @@ def build_deck() -> Path:
         fill_color=RED_TINT,
         accent_bar_color=HUST_RED,
         bullets=[
-            ("Vì sao S1 đạt NIS = 1.032 còn S2 lên 1.260?", "Khi đứng yên (ω=0), sai số hệ số tỉ lệ gyro không kích hoạt ⇒ bộ lọc nhất quán tuyệt đối."),
+            ("Vì sao S1 đạt NIS/2 = 1.002 còn S2 lên 1.112?", "Khi đứng yên (ω=0), sai số hệ số tỉ lệ gyro không kích hoạt ⇒ bộ lọc 4 trạng thái nhất quán tuyệt đối."),
             ("Khi nghiêng ±12°", "Sai số tỉ lệ gyro ẩn (+0.8%) sinh sóng sin 0.3 Hz biên độ ~0.10° vượt dải nhiễu ngẫu nhiên ±0.025°."),
-            ("Giá trị thực tiễn", "Chính kiểm định NIS & ACF tự phát hiện lỗi hiệu chuẩn động mà không cần ground truth!"),
+            ("Giá trị thực tiễn", "Chính kiểm định NIS/2 & ACF tự phát hiện lỗi hiệu chuẩn động mà không cần ground truth!"),
         ],
         font_size=10.6,
         title_size=12.0,
@@ -1219,7 +1220,7 @@ def build_deck() -> Path:
         bullets=[
             "Raw Accel vỡ lên 11.97°; Fixed CF lên 3.72°.",
             "Wiener Freq gần như bất biến: 0.08° → 0.09° (giảm 135×!).",
-            "Kalman giữ chặt 0.09° → 0.57° (giảm 21×).",
+            "Kalman 4 trạng thái giữ chặt 0.08° → 0.56° (giảm 21×).",
         ],
         font_size=10.8,
         title_size=12.2,
@@ -1237,7 +1238,7 @@ def build_deck() -> Path:
         bullets=[
             "Wiener nhân quả bậc 1 tăng tuyến tính lên 9.01°.",
             "Wiener Freq tăng nhẹ 0.06° → 0.45° (hiệu ứng biên).",
-            "Kalman 2 trạng thái BẤT BIẾN TUYỆT ĐỐI tại 0.072°!",
+            "Kalman 4 trạng thái BẤT BIẾN TUYỆT ĐỐI tại 0.067°!",
         ],
         font_size=10.8,
         title_size=12.2,
@@ -1248,12 +1249,12 @@ def build_deck() -> Path:
         4.96,
         4.25,
         1.62,
-        title="Lưu ý thú vị tại S2 (không rung)",
+        title="Điểm sáng trên S2 & S4",
         title_color=AMBER_ACCENT,
         fill_color=AMBER_TINT,
         accent_bar_color=AMBER_ACCENT,
         bullets=[
-            "Fixed CF (0.057°) thấp hơn nhẹ 0.079°/0.092° do tình cờ triệt tiêu cục bộ 2 sai số tỉ lệ trái dấu (+0.8% vs -1.0%), nhưng sụp đổ ngay khi rung (S3)!",
+            "Kalman 4 trạng thái đạt 0.076° (S2) và 0.062° (S4) — vượt Wiener Freq trên cả S2 & S4 nhờ lọc mượt đồng thời góc và tốc độ góc!",
         ],
         font_size=10.4,
         title_size=11.8,
@@ -1269,12 +1270,12 @@ def build_deck() -> Path:
         1.05,
         12.53,
         3.25,
-        headers=["Tiêu chí so sánh", "Phương án 1: Optimal Wiener CF (Miền tần số)", "Phương án 2: Kalman 2 Trạng thái [θ, b_g]^T"],
+        headers=["Tiêu chí so sánh", "Phương án 1: Optimal Wiener CF (Miền tần số)", "Phương án 2: Kalman 4 Trạng thái [u, u', u'', b]^T"],
         rows=[
-            ["Chế độ vận hành", "Xử lý theo khối (Offline, không nhân quả, zero-phase)", "Đệ quy từng mẫu thời gian thực (0.010 ms/mẫu ≪ 5 ms)"],
-            ["Triệt rung động ngang", "Xuất sắc nhất (0.088° ở 3 m/s² — tốt hơn Accel 135×)", "Rất tốt (0.29°–0.57°, dễ nâng cấp Adaptive R qua NIS)"],
-            ["Chống bias nhiệt chưa hiệu chuẩn", "Tốt ở phần thân (H_gyr(0)=0), có hiệu ứng biên nhẹ", "Xuất sắc tuyệt đối (0.072° bất biến tới 2.0 °/s)"],
-            ["Định lượng bất định & Tự chẩn đoán", "Chỉ có RMSE lý thuyết tĩnh", "Có dải ±1.96√P, ước lượng b̂_g(t) & cảnh báo lỗi qua NIS"],
+            ["Chế độ vận hành", "Xử lý theo khối (Offline, không nhân quả, zero-phase)", "Đệ quy từng mẫu thời gian thực (0.015 ms/mẫu ≪ 5 ms)"],
+            ["Triệt rung động ngang", "Xuất sắc nhất (0.088° ở 3 m/s² — tốt hơn Accel 135×)", "Rất tốt (0.28°–0.56°, dễ nâng cấp Adaptive R qua NIS)"],
+            ["Chống bias nhiệt chưa hiệu chuẩn", "Tốt ở phần thân (H_gyr(0)=0), có hiệu ứng biên nhẹ", "Xuất sắc tuyệt đối (0.067° bất biến tới 2.0 °/s)"],
+            ["Định lượng bất định & Tự chẩn đoán", "Chỉ có RMSE lý thuyết tĩnh", "Có dải ±1.96√P, ước lượng u', u'', b̂_k & cảnh báo NIS/2"],
             ["Khuyến nghị ứng dụng", "Hậu xử lý dữ liệu thí nghiệm / đo ghi sẵn (Offline)", "Điều khiển vòng kín thời gian thực (Drone, Robot, Gimbal)"],
         ],
         col_widths=[2.6, 4.95, 4.98],
@@ -1388,7 +1389,7 @@ def build_deck() -> Path:
         ["Baseline 1: Fixed CF (α = 0.96)", fmt_mc("S1_Static_30s", "Baseline_CF_Fixed"), fmt_mc("S2_SmallAngle_Sin_20s", "Baseline_CF_Fixed"), fmt_mc("S3_MultiFreq_Vib_20s", "Baseline_CF_Fixed"), fmt_mc("S4_LongTerm_Drift_180s", "Baseline_CF_Fixed"), "0.0003 ms"],
         ["PA 1a: Optimal Wiener CF (Freq)", fmt_mc("S1_Static_30s", "Method1_Wiener_Freq"), fmt_mc("S2_SmallAngle_Sin_20s", "Method1_Wiener_Freq"), fmt_mc("S3_MultiFreq_Vib_20s", "Method1_Wiener_Freq"), fmt_mc("S4_LongTerm_Drift_180s", "Method1_Wiener_Freq"), "0.00007 ms"],
         ["PA 1b: Causal Wiener CF (ωc*)", fmt_mc("S1_Static_30s", "Method1_Wiener_Causal"), fmt_mc("S2_SmallAngle_Sin_20s", "Method1_Wiener_Causal"), fmt_mc("S3_MultiFreq_Vib_20s", "Method1_Wiener_Causal"), fmt_mc("S4_LongTerm_Drift_180s", "Method1_Wiener_Causal"), "0.0003 ms"],
-        ["PA 2: Kalman 2-State [θ, b_g]^T", fmt_mc("S1_Static_30s", "Method2_Kalman_2State"), fmt_mc("S2_SmallAngle_Sin_20s", "Method2_Kalman_2State"), fmt_mc("S3_MultiFreq_Vib_20s", "Method2_Kalman_2State"), fmt_mc("S4_LongTerm_Drift_180s", "Method2_Kalman_2State"), "0.0100 ms"],
+        ["PA 2: Kalman 4-State [u, u', u'', b]ᵀ", fmt_mc("S1_Static_30s", "Method2_Kalman_4State"), fmt_mc("S2_SmallAngle_Sin_20s", "Method2_Kalman_4State"), fmt_mc("S3_MultiFreq_Vib_20s", "Method2_Kalman_4State"), fmt_mc("S4_LongTerm_Drift_180s", "Method2_Kalman_4State"), "0.0146 ms"],
     ]
     add_styled_table(
         s_a1,
@@ -1412,8 +1413,8 @@ def build_deck() -> Path:
         title="Khả năng tái lập & Kiểm thử tự động (Reproducibility)",
         accent_bar_color=HUST_RED,
         bullets=[
-            ("Kiểm thử tự động", "28/28 unit tests pass (python3 -m unittest discover -s tests -v) bao gồm kiểm chứng Allan Variance theo Farrell (2022) và kiểm thử lọc góc Roll."),
-            ("Tính thời gian thực", "Chu kỳ lấy mẫu ở 200 Hz là 5.0 ms; Kalman 2 trạng thái chạy chỉ 0.010 ms/mẫu trong Python thuần (nhanh hơn yêu cầu thực tế 500×)."),
+            ("Kiểm thử tự động", "29/29 unit tests pass (python3 -m unittest discover -s tests -v) bao gồm kiểm chứng Allan Variance theo Farrell (2022) và Kalman 4 trạng thái."),
+            ("Tính thời gian thực", "Chu kỳ lấy mẫu ở 200 Hz là 5.0 ms; Kalman 4 trạng thái chạy chỉ 0.0146 ms/mẫu trong Python thuần (nhanh hơn yêu cầu thực tế > 340×)."),
         ],
         font_size=11.2,
     )

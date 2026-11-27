@@ -54,7 +54,8 @@ from mpu6050_sim.attitude_filtering import (
     check_linearization_accuracy,
     compute_attitude_innovation_diagnostics,
     identify_attitude_noise_from_static,
-    run_attitude_kalman_2state,
+    run_attitude_kalman_4state,
+    tune_attitude_kalman_4state_qu_mle,
 )
 from mpu6050_sim.filtering import compute_filter_metrics, norm_ppf
 
@@ -155,11 +156,11 @@ def run_all_attitude_methods(
     noise_model: AttitudeNoiseModel,
     *,
     cf_alpha: float = 0.96,
+    fixed_qu: float | None = None,
 ) -> dict[str, dict]:
-    """Run all Baselines + Method 1 (Wiener) + Method 2 (Kalman 2-State) strictly black-box."""
+    """Run all Baselines + Method 1 (Wiener) + Method 2 (Kalman 4-State [u, u', u'', b]^T)."""
     fs = noise_model.sample_rate_hz
     n = ay.size
-    am = noise_model.accel_angle_model
     gm = noise_model.gyro_rate_model
 
     # Measured Roll angle from 2-axis flat-bench calibrated accelerometer (removes both b_0y & b_0z!)
@@ -192,16 +193,18 @@ def run_all_attitude_methods(
     w_causal_est, alpha_opt = apply_wiener_complementary_causal(theta_acc_cal, gx_cal, noise_model)
     t_wc = time.perf_counter() - t0
 
-    # Method 2: Recursive 2-State Kalman Filter [theta, b_g]^T with black-box AR(1) gyro bias
-    # Uses raw gx (initialized at gm.bias_hat) so it tracks b_0 + x_B + x_K + any thermal bias shift online!
+    # Method 2: Recursive 4-State Kalman Filter x_k = [u_k, u_dot_k, u_ddot_k, b_k]^T
+    # Fuses 2D measurement y_k = [theta_acc_cal[k], gx[k]]^T; q_u tuned via 2D Innovation MLE (zero ground truth!)
+    if fixed_qu is None:
+        q_u_mle, log10_qu_se, kf_res = tune_attitude_kalman_4state_qu_mle(theta_acc_cal, gx, noise_model)
+    else:
+        q_u_mle = fixed_qu
+        log10_qu_se = float("nan")
+        kf_res = run_attitude_kalman_4state(theta_acc_cal, gx, noise_model, q_u=q_u_mle)
+
+    # Measure single-pass online Kalman runtime
     t0 = time.perf_counter()
-    kf_res = run_attitude_kalman_2state(
-        theta_acc_cal,
-        gx,
-        noise_model,
-        use_calibrated_gyro=False,
-        R_scale=1.0,
-    )
+    _ = run_attitude_kalman_4state(theta_acc_cal, gx, noise_model, q_u=q_u_mle)
     t_kf = time.perf_counter() - t0
 
     return {
@@ -218,10 +221,12 @@ def run_all_attitude_methods(
             "alpha_opt": alpha_opt,
             "time_ms_per_sample": t_wc * 1e3 / n,
         },
-        "Method2_Kalman_2State": {
+        "Method2_Kalman_4State": {
             "est": kf_res.theta_est_rad,
             "std": kf_res.theta_std_rad,
             "result": kf_res,
+            "q_u_mle": q_u_mle,
+            "log10_qu_se": log10_qu_se,
             "time_ms_per_sample": t_kf * 1e3 / n,
         },
     }
@@ -368,7 +373,7 @@ def plot_fig3_vibration_comparison(
     ax1.plot(tz, outputs["Baseline_AccelRaw"]["est"][mask] * RAD2DEG, color="#cccccc", linewidth=0.9, label="Baseline: Raw Accel atan2 (corrupted by vibration!)")
     ax1.plot(tz, outputs["Baseline_CF_Fixed"]["est"][mask] * RAD2DEG, color="#ff7f0e", linewidth=1.3, alpha=0.9, label=r"Baseline: Fixed CF ($\alpha=0.96$)")
     ax1.plot(tz, outputs["Method1_Wiener_Freq"]["est"][mask] * RAD2DEG, color="#2ca02c", linewidth=1.7, label="Method 1: Optimal Wiener Complementary (Freq)")
-    ax1.plot(tz, outputs["Method2_Kalman_2State"]["est"][mask] * RAD2DEG, color="#1f77b4", linewidth=1.7, label="Method 2: 2-State Kalman (AR1 Gyro Bias)")
+    ax1.plot(tz, outputs["Method2_Kalman_4State"]["est"][mask] * RAD2DEG, color="#1f77b4", linewidth=1.7, label=r"Method 2: 4-State Kalman $[u, \dot{u}, \ddot{u}, b]^T$")
     ax1.plot(tz, theta_true[mask] * RAD2DEG, "k--", linewidth=1.4, label="Ground Truth Roll $\\theta(t)$")
     ax1.set_ylabel("Roll Angle [deg]")
     ax1.set_title("Scenario 3: Multi-Frequency Roll + 4 Hz Lateral Acceleration Disturbance (1.5 m/s²) — Zoom 4–10 s", fontsize=10.4, fontweight="bold")
@@ -378,7 +383,7 @@ def plot_fig3_vibration_comparison(
     ax2.plot(tz, (outputs["Baseline_CF_Fixed"]["est"][mask] - theta_true[mask]) * RAD2DEG, color="#ff7f0e", linewidth=1.2, alpha=0.85, label=r"Error: Fixed CF ($\alpha=0.96$)")
     ax2.plot(tz, (outputs["Method1_Wiener_Causal"]["est"][mask] - theta_true[mask]) * RAD2DEG, color="#17becf", linewidth=1.2, alpha=0.85, label="Error: Causal Wiener CF")
     ax2.plot(tz, (outputs["Method1_Wiener_Freq"]["est"][mask] - theta_true[mask]) * RAD2DEG, color="#2ca02c", linewidth=1.5, label="Error: Optimal Wiener CF (Freq)")
-    ax2.plot(tz, (outputs["Method2_Kalman_2State"]["est"][mask] - theta_true[mask]) * RAD2DEG, color="#1f77b4", linewidth=1.6, label="Error: 2-State Kalman (AR1 Bias)")
+    ax2.plot(tz, (outputs["Method2_Kalman_4State"]["est"][mask] - theta_true[mask]) * RAD2DEG, color="#1f77b4", linewidth=1.6, label=r"Error: 4-State Kalman $[u, \dot{u}, \ddot{u}, b]^T$")
     ax2.axhline(0.0, color="#111111", linestyle="--", linewidth=1.0)
     ax2.set_xlabel("Time [s]")
     ax2.set_ylabel("Roll Error [deg]")
@@ -407,7 +412,7 @@ def plot_fig4_drift_and_bias_tracking(
     ax1.plot(t, (outputs["Baseline_CF_Fixed"]["est"] - theta_true) * RAD2DEG, color="#ff7f0e", linewidth=1.1, alpha=0.85, label=r"Baseline: Fixed CF ($\alpha=0.96$)")
     ax1.plot(t, (outputs["Method1_Wiener_Causal"]["est"] - theta_true) * RAD2DEG, color="#17becf", linewidth=1.2, alpha=0.85, label="Method 1b: Causal 1st-Order Wiener CF (biased by uncalibrated $b_g$!)")
     ax1.plot(t, (outputs["Method1_Wiener_Freq"]["est"] - theta_true) * RAD2DEG, color="#2ca02c", linewidth=1.5, label=r"Method 1a: Freq-Domain Optimal Wiener CF ($H_{\mathrm{gyr}}(0)=0$ rejects DC bias!)")
-    ax1.plot(t, (outputs["Method2_Kalman_2State"]["est"] - theta_true) * RAD2DEG, color="#1f77b4", linewidth=1.5, label=r"Method 2: 2-State Kalman (online bias tracking $\to$ zero steady-state error!)")
+    ax1.plot(t, (outputs["Method2_Kalman_4State"]["est"] - theta_true) * RAD2DEG, color="#1f77b4", linewidth=1.5, label=r"Method 2: 4-State Kalman $[u, \dot{u}, \ddot{u}, b]^T$ (online bias tracking $\to$ zero steady-state error!)")
     ax1.axhline(0.0, color="#111111", linestyle="--", linewidth=1.0)
     ax1.text(
         0.015,
@@ -422,16 +427,16 @@ def plot_fig4_drift_and_bias_tracking(
     ax1.grid(True, linestyle=":", alpha=0.6)
     ax1.legend(fontsize=8.2, loc="upper right")
 
-    # (b) Kalman real-time gyro bias estimate b_g_hat +/- 1.96*sigma vs. true gyro bias!
-    kf_res = outputs["Method2_Kalman_2State"]["result"]
+    # (b) Kalman real-time gyro bias estimate b_k_hat +/- 1.96*sigma vs. true gyro bias!
+    kf_res = outputs["Method2_Kalman_4State"]["result"]
     b_est = kf_res.bias_est_radps * RAD2DEG
     b_sd = kf_res.bias_std_radps * RAD2DEG
-    ax2.plot(t, b_est, color="#1f77b4", linewidth=1.6, label=r"Kalman Online Bias Estimate $\hat{b}_{g,k}$ [deg/s]")
+    ax2.plot(t, b_est, color="#1f77b4", linewidth=1.6, label=r"4-State Kalman Online Bias Estimate $\hat{b}_k$ [deg/s]")
     ax2.fill_between(t, b_est - 1.96 * b_sd, b_est + 1.96 * b_sd, color="#1f77b4", alpha=0.22, label=r"95% Posterior Band ($\pm 1.96\sqrt{P_{bb}}$)")
     ax2.axhline(true_total_gyro_bias_radps * RAD2DEG, color="#d62728", linestyle="--", linewidth=1.5, label=f"True Total Gyro Static + Thermal Bias ({true_total_gyro_bias_radps*RAD2DEG:.3f} deg/s)")
     ax2.set_xlabel("Time [s]")
     ax2.set_ylabel("Gyroscope Bias [deg/s]")
-    ax2.set_title("Observability Proof: 2-State Kalman Filter Converges to the Unknown Gyroscope Bias Online", fontsize=10, fontweight="bold")
+    ax2.set_title(r"Observability Proof: 4-State Kalman $[u, \dot{u}, \ddot{u}, b]^T$ Converges to Unknown Gyro Bias Online", fontsize=10, fontweight="bold")
     ax2.grid(True, linestyle=":", alpha=0.6)
     ax2.legend(fontsize=8.4, loc="lower right")
 
@@ -468,13 +473,13 @@ def plot_fig5_kalman_consistency(
     ax.legend(fontsize=8.2, loc="upper right")
 
     ax = axes[0, 1]
-    z_nu = kf_res.innovations_rad[burn:] / np.sqrt(kf_res.innovation_var[burn:])
-    ax.plot(tb, z_nu, color="#2ca02c", linewidth=0.6, alpha=0.85, label=r"Normalized Innovation $\nu_k / \sqrt{S_k}$")
+    z_nu = kf_res.innovations_rad[burn:] / np.sqrt(kf_res.innovation_var_angle[burn:])
+    ax.plot(tb, z_nu, color="#2ca02c", linewidth=0.6, alpha=0.85, label=r"Normalized Angle Innovation $\nu_{a,k} / \sqrt{S_{aa,k}}$")
     ax.axhline(1.96, color="#d62728", linestyle="--", linewidth=1.1, label="±1.96 (95% Bounds)")
     ax.axhline(-1.96, color="#d62728", linestyle="--", linewidth=1.1)
     ax.set_title("(b) Normalized Innovations (No Ground Truth Needed)", fontsize=9.8, fontweight="bold")
     ax.set_xlabel("Time [s]")
-    ax.set_ylabel(r"$\nu_k / \sqrt{S_k}$")
+    ax.set_ylabel(r"$\nu_{a,k} / \sqrt{S_{aa,k}}$")
     ax.grid(True, linestyle=":", alpha=0.6)
     ax.legend(fontsize=8.2, loc="upper right")
 
@@ -491,19 +496,19 @@ def plot_fig5_kalman_consistency(
     ax.legend(fontsize=8.2, loc="upper right")
 
     ax = axes[1, 1]
-    nis_seq = kf_res.nis[burn:]
+    nis_seq = kf_res.nis_dof[burn:]
     running_nis = np.cumsum(nis_seq) / np.arange(1, nis_seq.size + 1)
-    ax.plot(tb, running_nis, color="#9467bd", linewidth=1.4, label=f"Running Mean NIS (Final = {diag.nis_mean:.3f})")
-    ax.axhline(1.0, color="k", linestyle="-", linewidth=1.0, label="Ideal E[NIS] = 1.0")
+    ax.plot(tb, running_nis, color="#9467bd", linewidth=1.4, label=f"Running Mean NIS/2 (Final = {diag.nis_mean:.3f})")
+    ax.axhline(1.0, color="k", linestyle="-", linewidth=1.0, label="Ideal E[NIS/2] = 1.0")
     ax.axhspan(diag.nis_ci95[0], diag.nis_ci95[1], color="#2ca02c", alpha=0.2, label=f"95% $\\chi^2$ Band [{diag.nis_ci95[0]:.3f}, {diag.nis_ci95[1]:.3f}]")
-    ax.set_title("(d) Normalized Innovation Squared (NIS) Consistency", fontsize=9.8, fontweight="bold")
+    ax.set_title("(d) 2D Normalized Innovation Squared (NIS / 2) Consistency", fontsize=9.8, fontweight="bold")
     ax.set_xlabel("Time [s]")
-    ax.set_ylabel("Running Mean NIS")
+    ax.set_ylabel("Running Mean NIS / 2")
     ax.set_ylim(0.5, 1.5)
     ax.grid(True, linestyle=":", alpha=0.6)
     ax.legend(fontsize=8.2, loc="upper right")
 
-    fig.suptitle("Step 3-4: 2-State Kalman Uncertainty Quantification & No-Ground-Truth Diagnostics (Scenario 2)", fontsize=11.2, fontweight="bold")
+    fig.suptitle(r"Step 3-4: 4-State Kalman $[u, \dot{u}, \ddot{u}, b]^T$ Uncertainty & No-Ground-Truth Diagnostics (Scenario 2)", fontsize=11.0, fontweight="bold")
     fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.95))
     save_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(save_path, dpi=150)
@@ -528,7 +533,7 @@ def plot_fig6_montecarlo_and_stress(
         ("Baseline_CF_Fixed", r"Baseline: Fixed CF ($\alpha=0.96$)", "#ff7f0e"),
         ("Method1_Wiener_Causal", "Method 1b: Causal Wiener CF", "#17becf"),
         ("Method1_Wiener_Freq", "Method 1a: Freq Wiener CF", "#2ca02c"),
-        ("Method2_Kalman_2State", "Method 2: 2-State Kalman (AR1)", "#1f77b4"),
+        ("Method2_Kalman_4State", r"Method 2: 4-State Kalman $[u, \dot{u}, \ddot{u}, b]^T$", "#1f77b4"),
     ]
     x = np.arange(len(scenarios))
     width = 0.15
@@ -569,7 +574,7 @@ def plot_fig6_montecarlo_and_stress(
         ("Baseline_CF_Fixed", r"Fixed CF ($\alpha=0.96$)", "#ff7f0e", "-.", "^"),
         ("Method1_Wiener_Causal", "Causal Wiener CF", "#17becf", "-.", "v"),
         ("Method1_Wiener_Freq", "Freq Wiener CF", "#2ca02c", "-", "o"),
-        ("Method2_Kalman_2State", "2-State Kalman", "#1f77b4", "-", "D"),
+        ("Method2_Kalman_4State", r"4-State Kalman $[u,\dot{u},\ddot{u},b]^T$", "#1f77b4", "-", "D"),
     ]
 
     # Bottom-left: Lateral Vibration Amplitude Stress Test
@@ -678,7 +683,7 @@ def main() -> None:
     # --------------------------------------------------------------------------
     # STEP 3 & 4a: Single-Run Evaluation Across All 4 Roll Scenarios (seed=2026)
     # --------------------------------------------------------------------------
-    print("\n[Step 3-4] Evaluating Baselines, Wiener, and 2-State Kalman across 4 Roll scenarios (seed=2026)...")
+    print("\n[Step 3-4] Evaluating Baselines, Wiener, and 4-State Kalman [u, u', u'', b]^T across 4 Roll scenarios (seed=2026)...")
     single_run_summary: dict[str, dict] = {}
     base_gyr_bias = list(g_cfg.static_bias_radps)
 
@@ -690,7 +695,7 @@ def main() -> None:
             sc["theta"], sc["omega"], seed=2026, fs=fs, a_lin_y_mps2=sc["a_lin"], gyro_overrides=g_ovr
         )
         outputs = run_all_attitude_methods(ay, az, gx, noise_model, cf_alpha=0.96)
-        kf_res = outputs["Method2_Kalman_2State"]["result"]
+        kf_res = outputs["Method2_Kalman_4State"]["result"]
         kf_diag = compute_attitude_innovation_diagnostics(kf_res, burn_in=100, lags=20)
 
         if s_name == "S2_SmallAngle_Sin_20s":
@@ -701,11 +706,10 @@ def main() -> None:
             true_b_tot = base_gyr_bias[0] + sc["extra_gyro_bias"]
             plot_fig4_drift_and_bias_tracking(t_vec, sc["theta"], outputs, true_b_tot, OUTPUT_DIR / "fig4_drift_and_bias_tracking_s4.png")
 
-        print(f"\n  --- {s_name} (Kalman NIS={kf_diag.nis_mean:.3f} in [{kf_diag.nis_ci95[0]:.3f}, {kf_diag.nis_ci95[1]:.3f}], LB p={kf_diag.ljung_box_p:.3f}) ---")
+        print(f"\n  --- {s_name} (Kalman q_u_MLE={outputs['Method2_Kalman_4State']['q_u_mle']:.2e}, NIS/2={kf_diag.nis_mean:.3f} in [{kf_diag.nis_ci95[0]:.3f}, {kf_diag.nis_ci95[1]:.3f}], LB p={kf_diag.ljung_box_p:.3f}) ---")
         raw_acc_ref = outputs["Baseline_AccelRaw"]["est"]
         s_metrics: dict[str, dict] = {}
         for m_name, m_data in outputs.items():
-            # Use burn-in of 200 samples (1 s) for S1-S3 and 1000 samples (5 s) for S4 (allows online bias convergence)
             burn = 1000 if s_name == "S4_LongTerm_Drift_180s" else 200
             met = compute_filter_metrics(
                 m_data["est"], sc["theta"], raw_acc_ref, fs=fs, burn_in=burn, est_std=m_data.get("std")
@@ -728,6 +732,8 @@ def main() -> None:
         single_run_summary[s_name] = {
             "metrics": s_metrics,
             "kalman_diagnostics": {
+                "q_u_mle": outputs["Method2_Kalman_4State"]["q_u_mle"],
+                "log10_qu_se": outputs["Method2_Kalman_4State"]["log10_qu_se"],
                 "nis_mean": kf_diag.nis_mean,
                 "nis_ci95": list(kf_diag.nis_ci95),
                 "nis_consistent": kf_diag.nis_consistent,
@@ -749,12 +755,13 @@ def main() -> None:
         "Baseline_CF_Fixed",
         "Method1_Wiener_Causal",
         "Method1_Wiener_Freq",
-        "Method2_Kalman_2State",
+        "Method2_Kalman_4State",
     ]
     mc_summary: dict[str, dict] = {}
     for s_name, sc in scenarios.items():
         n_runs = 10 if s_name == "S4_LongTerm_Drift_180s" else 20
         burn = 1000 if s_name == "S4_LongTerm_Drift_180s" else 200
+        qu_ref = single_run_summary[s_name]["kalman_diagnostics"]["q_u_mle"]
         g_ovr = None
         if sc["extra_gyro_bias"] != 0.0:
             g_ovr = {"static_bias_radps": [base_gyr_bias[0] + sc["extra_gyro_bias"], base_gyr_bias[1], base_gyr_bias[2]]}
@@ -765,14 +772,14 @@ def main() -> None:
             _, ay, az, gx, _ = simulate_roll_motion(
                 sc["theta"], sc["omega"], seed=3000 + r_idx, fs=fs, a_lin_y_mps2=sc["a_lin"], gyro_overrides=g_ovr
             )
-            outs = run_all_attitude_methods(ay, az, gx, noise_model, cf_alpha=0.96)
+            outs = run_all_attitude_methods(ay, az, gx, noise_model, cf_alpha=0.96, fixed_qu=qu_ref)
             raw_acc_ref = outs["Baseline_AccelRaw"]["est"]
             for m in method_names:
                 met = compute_filter_metrics(
                     outs[m]["est"], sc["theta"], raw_acc_ref, fs=fs, burn_in=burn, est_std=outs[m].get("std")
                 )
                 acc_rmse[m].append(met.rmse * RAD2DEG)
-                if m == "Method2_Kalman_2State" and met.coverage_95_pct is not None:
+                if m == "Method2_Kalman_4State" and met.coverage_95_pct is not None:
                     acc_cov.append(met.coverage_95_pct)
 
         mc_summary[s_name] = {}
@@ -781,7 +788,7 @@ def main() -> None:
             r_mean = float(np.mean(acc_rmse[m]))
             r_std = float(np.std(acc_rmse[m], ddof=1))
             mc_summary[s_name][m] = {"rmse_deg_mean": r_mean, "rmse_deg_std": r_std, "n_runs": n_runs}
-            if m == "Method2_Kalman_2State":
+            if m == "Method2_Kalman_4State":
                 mc_summary[s_name][m]["coverage_95_mean"] = float(np.mean(acc_cov))
             print(f"    {m:22s}: RMSE = {r_mean:7.3f} +/- {r_std:5.3f} deg")
 
@@ -789,16 +796,17 @@ def main() -> None:
     # STEP 4c: Robustness Stress Tests (Lateral Vibration & Uncalibrated Gyro Bias)
     # --------------------------------------------------------------------------
     print("\n[Step 4c] Running Robustness Stress Tests (Vibration & Uncalibrated Gyro Bias)...")
-    sweep_keys = ["Baseline_AccelRaw", "Baseline_CF_Fixed", "Method1_Wiener_Causal", "Method1_Wiener_Freq", "Method2_Kalman_2State"]
+    sweep_keys = ["Baseline_AccelRaw", "Baseline_CF_Fixed", "Method1_Wiener_Causal", "Method1_Wiener_Freq", "Method2_Kalman_4State"]
 
     # Stress Test 1: 4 Hz lateral vibration amplitude sweep on S2 trajectory (0 to 3.0 m/s^2)
     vib_amps = [0.0, 0.5, 1.0, 2.0, 3.0]
     vib_sweep: dict[str, list[float]] = {"amps": vib_amps, **{k: [] for k in sweep_keys}}
     t20 = s2["t"]
+    qu_s2 = single_run_summary["S2_SmallAngle_Sin_20s"]["kalman_diagnostics"]["q_u_mle"]
     for amp in vib_amps:
         a_lin = amp * np.sin(2.0 * math.pi * 4.0 * t20)
         _, ay, az, gx, _ = simulate_roll_motion(s2["theta"], s2["omega"], seed=4100, fs=fs, a_lin_y_mps2=a_lin)
-        outs = run_all_attitude_methods(ay, az, gx, noise_model, cf_alpha=0.96)
+        outs = run_all_attitude_methods(ay, az, gx, noise_model, cf_alpha=0.96, fixed_qu=qu_s2)
         raw_ref = outs["Baseline_AccelRaw"]["est"]
         for k in sweep_keys:
             met = compute_filter_metrics(outs[k]["est"], s2["theta"], raw_ref, fs=fs, burn_in=200)
@@ -810,10 +818,11 @@ def main() -> None:
     t120 = np.arange(int(round(120.0 * fs)), dtype=float) / fs
     th120 = (10.0 * DEG2RAD) * np.sin(2.0 * math.pi * 0.15 * t120)
     om120 = (10.0 * DEG2RAD) * (2.0 * math.pi * 0.15) * np.cos(2.0 * math.pi * 0.15 * t120)
+    qu_s4 = single_run_summary["S4_LongTerm_Drift_180s"]["kalman_diagnostics"]["q_u_mle"]
     for b_dps in bias_steps_dps:
         g_ovr = {"static_bias_radps": [base_gyr_bias[0] + b_dps * DEG2RAD, base_gyr_bias[1], base_gyr_bias[2]]}
         _, ay, az, gx, _ = simulate_roll_motion(th120, om120, seed=4200, fs=fs, gyro_overrides=g_ovr)
-        outs = run_all_attitude_methods(ay, az, gx, noise_model, cf_alpha=0.96)
+        outs = run_all_attitude_methods(ay, az, gx, noise_model, cf_alpha=0.96, fixed_qu=qu_s4)
         raw_ref = outs["Baseline_AccelRaw"]["est"]
         for k in sweep_keys:
             met = compute_filter_metrics(outs[k]["est"], th120, raw_ref, fs=fs, burn_in=1000)

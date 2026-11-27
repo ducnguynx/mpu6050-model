@@ -23,6 +23,8 @@ from mpu6050_sim.attitude_filtering import (
     compute_attitude_innovation_diagnostics,
     identify_attitude_noise_from_static,
     run_attitude_kalman_2state,
+    run_attitude_kalman_4state,
+    tune_attitude_kalman_4state_qu_mle,
 )
 from mpu6050_sim.filtering import compute_filter_metrics
 
@@ -149,6 +151,18 @@ class TestAttitudeFiltering(unittest.TestCase):
         # After bias convergence (burn_in=20s=4000 samples), angle RMSE is tiny (< 0.15 deg)
         m_kf = compute_filter_metrics(kf.theta_est_rad, th, za, fs=self.fs, burn_in=4000)
         self.assertLess(m_kf.rmse * RAD2DEG, 0.15)
+
+    def test_kalman_4state_fuses_roll_rate_accel_and_tracks_bias(self) -> None:
+        za = accel_to_roll_atan2(
+            self.ay_dyn - self.noise_model.ay_bias_hat_mps2,
+            self.az_dyn - self.noise_model.az_bias_hat_mps2,
+        )
+        q_u_mle, _, kf4 = tune_attitude_kalman_4state_qu_mle(za, self.gx_dyn, self.noise_model)
+        self.assertGreater(q_u_mle, 0.0)
+        m_kf4 = compute_filter_metrics(kf4.theta_est_rad, self.theta_true, za, fs=self.fs, burn_in=200)
+        # Under 1.5 m/s^2 vibration, 4-state Kalman beats raw accel (>5 deg) by >15x
+        self.assertLess(m_kf4.rmse * RAD2DEG, 0.35)
+        self.assertAlmostEqual(float(kf4.bias_est_radps[-1]), self.true_gyro_bias, delta=2.0e-3)
 
 
 if __name__ == "__main__":
