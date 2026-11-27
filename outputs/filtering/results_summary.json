@@ -1,0 +1,764 @@
+{
+  "assumptions": {
+    "saturation_free": true,
+    "max_abs_static": 0.31184476623535157,
+    "max_abs_dynamic": 0.8882488159179687,
+    "fsr_limit": 19.6133,
+    "static_mean": 0.1166388867441262,
+    "static_mean_se_naive": 4.634495872784385e-05,
+    "static_mean_se_block": 0.0006435792602643792,
+    "zero_mean_t_stat": 181.2346884767721,
+    "zero_mean_p_value": 0.0,
+    "skewness": 2.371488829681875e-05,
+    "excess_kurtosis": 0.002594386028477391,
+    "jarque_bera_stat": 0.20199237290864036,
+    "jarque_bera_p_value": 0.9039364800823495,
+    "short_mean_spread": 0.004007295028686492,
+    "short_std_ratio": 1.0373591331795915,
+    "long_mean_spread": 0.006176084265179099,
+    "long_std_ratio": 1.004174575206592,
+    "long_horizon_nonstationary": true,
+    "block_1s_ljung_box_q": 10999.910525563455,
+    "block_1s_ljung_box_p": 0.0,
+    "raw_ljung_box_q": 26.458333478938435,
+    "raw_ljung_box_p": 0.15120250133271287,
+    "has_colored_noise": true
+  },
+  "identified_noise_model": {
+    "bias_hat": 0.11803863097381591,
+    "bias_se_naive": 0.000866170553370192,
+    "bias_se_block": 0.0006435792602643792,
+    "sigma_v_hat": 0.03926030233187345,
+    "sigma_v_ci95": [
+      0.03919069262998233,
+      0.03932991203376457
+    ],
+    "R_hat": 0.001541371339190108,
+    "N_diff_hat": 0.0027761226010301738,
+    "N_psd_hat": 0.0027737880968613815,
+    "N_av_hat": 0.0027756969392702976,
+    "N_av_se": 1.2707178104205478e-06,
+    "B_av_hat": 0.0011889964804974928,
+    "B_av_se": 0.000146522078421991,
+    "TB_av_hat": 51.32813660926643,
+    "TB_av_se": 15.67214731712122,
+    "K_av_hat": 9.923457218351965e-05,
+    "K_av_se": 1.566958075715089e-05,
+    "phi_b_hat": 0.9999025922854979,
+    "q_b_hat": 3.1884983142661794e-10,
+    "q_k_hat": 4.9237501582230857e-11,
+    "sigma_gm_hat": 0.0012793577297311011
+  },
+  "hidden_truth_reference": {
+    "effective_static_bias": 0.12058005,
+    "sigma_v": 0.03922660726496748,
+    "N": 0.00277374,
+    "B": 0.0015,
+    "T_B": 100.0,
+    "K": 0.0001
+  },
+  "single_run": {
+    "S1_Static_10s": {
+      "metrics": {
+        "Baseline_Raw": {
+          "rmse": 0.12941398803435894,
+          "mae": 0.1229880626787458,
+          "bias_mean": 0.12297767966134206,
+          "snr_in_db": 0.0,
+          "snr_out_db": 0.0,
+          "snr_gain_db": 0.0,
+          "lag_samples": 0,
+          "lag_ms": 0.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 0.0
+        },
+        "Baseline_BiasCal": {
+          "rmse": 0.040606216346851215,
+          "mae": 0.032273117675345284,
+          "bias_mean": 0.00493904868752616,
+          "snr_in_db": 0.0,
+          "snr_out_db": 0.0,
+          "snr_gain_db": 10.067773929885846,
+          "lag_samples": 0,
+          "lag_ms": 0.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 1.2424998203641735e-06
+        },
+        "Baseline_MA15": {
+          "rmse": 0.011006094024763465,
+          "mae": 0.008805240036610191,
+          "bias_mean": 0.00487168122754778,
+          "snr_in_db": 0.0,
+          "snr_out_db": 0.0,
+          "snr_gain_db": 21.406960040347002,
+          "lag_samples": 0,
+          "lag_ms": 0.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 9.718500223243609e-06
+        },
+        "Baseline_LPF5Hz": {
+          "rmse": 0.011412704778671507,
+          "mae": 0.009164058812741021,
+          "bias_mean": 0.004875682732333222,
+          "snr_in_db": 0.0,
+          "snr_out_db": 0.0,
+          "snr_gain_db": 21.09185274993587,
+          "lag_samples": 0,
+          "lag_ms": 0.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 0.00023206949981613434
+        },
+        "Method1_Wiener_FIR": {
+          "rmse": 0.004469822858692295,
+          "mae": 0.003568981661777251,
+          "bias_mean": 0.0005716208694113399,
+          "snr_in_db": 0.0,
+          "snr_out_db": 0.0,
+          "snr_gain_db": 29.23381817016292,
+          "lag_samples": 0,
+          "lag_ms": 0.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 8.988550007416052e-05
+        },
+        "Method1_Wiener_Freq": {
+          "rmse": 0.012938527443287901,
+          "mae": 0.010252824066544102,
+          "bias_mean": 0.004715985073746775,
+          "snr_in_db": 0.0,
+          "snr_out_db": 0.0,
+          "snr_gain_db": 20.00192738705831,
+          "lag_samples": 0,
+          "lag_ms": 0.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 7.238199987114058e-05
+        },
+        "Method2_Kalman_AR1": {
+          "rmse": 0.007371198416569701,
+          "mae": 0.0060373054445727265,
+          "bias_mean": 0.004897005658768961,
+          "snr_in_db": 0.0,
+          "snr_out_db": 0.0,
+          "snr_gain_db": 24.88886238115785,
+          "lag_samples": 0,
+          "lag_ms": 0.0,
+          "coverage_95_pct": 95.71428571428572,
+          "time_ms_per_sample": 0.01123070399989956
+        }
+      },
+      "wiener_fir_rmse_theory": 0.008528078196342858,
+      "kalman_diagnostics": {
+        "q_u_mle": 0.010000996322198813,
+        "log10_qu_se": 0.4761767733892585,
+        "nis_mean": 1.050607801329799,
+        "nis_ci95": [
+          0.9383627267757367,
+          1.0635700192484443
+        ],
+        "nis_consistent": true,
+        "ljung_box_q": 17.461467966988554,
+        "ljung_box_p": 0.6228372601827736,
+        "acf_within_95_pct": 95.0
+      }
+    },
+    "S2_Sinusoidal_10s": {
+      "metrics": {
+        "Baseline_Raw": {
+          "rmse": 0.12938565473040586,
+          "mae": 0.12296201076936483,
+          "bias_mean": 0.1229491346311832,
+          "snr_in_db": 8.772638481358385,
+          "snr_out_db": 8.772638481358385,
+          "snr_gain_db": 0.0,
+          "lag_samples": 0,
+          "lag_ms": 0.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 0.0
+        },
+        "Baseline_BiasCal": {
+          "rmse": 0.04059890379835402,
+          "mae": 0.032274378089939715,
+          "bias_mean": 0.004910503657367288,
+          "snr_in_db": 8.772638481358385,
+          "snr_out_db": 18.840074888869914,
+          "snr_gain_db": 10.06743640751153,
+          "lag_samples": 0,
+          "lag_ms": 0.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 1.0019998626376037e-06
+        },
+        "Baseline_MA15": {
+          "rmse": 0.06206162711274184,
+          "mae": 0.0550754596110834,
+          "bias_mean": 0.006450549444633628,
+          "snr_in_db": 8.772638481358385,
+          "snr_out_db": 15.153897885931492,
+          "snr_gain_db": 6.3812594045731075,
+          "lag_samples": 6,
+          "lag_ms": 30.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 1.1126000117656076e-05
+        },
+        "Baseline_LPF5Hz": {
+          "rmse": 0.055989256257965594,
+          "mae": 0.04965548965157318,
+          "bias_mean": 0.006319807155479841,
+          "snr_in_db": 8.772638481358385,
+          "snr_out_db": 16.04826706758162,
+          "snr_gain_db": 7.275628586223235,
+          "lag_samples": 6,
+          "lag_ms": 30.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 0.00023088700027074083
+        },
+        "Method1_Wiener_FIR": {
+          "rmse": 0.015131874699528702,
+          "mae": 0.012131214812804186,
+          "bias_mean": 0.004723374741667886,
+          "snr_in_db": 8.772638481358385,
+          "snr_out_db": 27.41250630923676,
+          "snr_gain_db": 18.639867827878376,
+          "lag_samples": 0,
+          "lag_ms": 0.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 8.30469998618355e-05
+        },
+        "Method1_Wiener_Freq": {
+          "rmse": 0.013278793853788594,
+          "mae": 0.010498354445332862,
+          "bias_mean": 0.004789969726663448,
+          "snr_in_db": 8.772638481358385,
+          "snr_out_db": 28.547188462586778,
+          "snr_gain_db": 19.774549981228393,
+          "lag_samples": 0,
+          "lag_ms": 0.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 6.64905001031002e-05
+        },
+        "Method2_Kalman_AR1": {
+          "rmse": 0.017072531135245126,
+          "mae": 0.013623564123880945,
+          "bias_mean": 0.004725726083088116,
+          "snr_in_db": 8.772638481358385,
+          "snr_out_db": 26.36440276955947,
+          "snr_gain_db": 17.591764288201084,
+          "lag_samples": 0,
+          "lag_ms": 0.0,
+          "coverage_95_pct": 93.92857142857143,
+          "time_ms_per_sample": 0.011129432500183611
+        }
+      },
+      "wiener_fir_rmse_theory": 0.01666465977184552,
+      "kalman_diagnostics": {
+        "q_u_mle": 369.1852678110719,
+        "log10_qu_se": 0.07959514893039561,
+        "nis_mean": 1.056113208366939,
+        "nis_ci95": [
+          0.9383627267757367,
+          1.0635700192484443
+        ],
+        "nis_consistent": true,
+        "ljung_box_q": 12.419253786280098,
+        "ljung_box_p": 0.9008902567432144,
+        "acf_within_95_pct": 100.0
+      }
+    },
+    "S3_MultiFreq_10s": {
+      "metrics": {
+        "Baseline_Raw": {
+          "rmse": 0.12940367179681844,
+          "mae": 0.1229578361440198,
+          "bias_mean": 0.12295074518890256,
+          "snr_in_db": 9.751462875131004,
+          "snr_out_db": 9.751462875131004,
+          "snr_gain_db": 0.0,
+          "lag_samples": 0,
+          "lag_ms": 0.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 0.0
+        },
+        "Baseline_BiasCal": {
+          "rmse": 0.04065161003028443,
+          "mae": 0.0322718244378244,
+          "bias_mean": 0.004912114215086637,
+          "snr_in_db": 9.751462875131004,
+          "snr_out_db": 19.8088398501819,
+          "snr_gain_db": 10.057376975050897,
+          "lag_samples": 0,
+          "lag_ms": 0.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 1.5730001905467361e-06
+        },
+        "Baseline_MA15": {
+          "rmse": 0.13384626239059944,
+          "mae": 0.11754224975483207,
+          "bias_mean": 0.005859839397756122,
+          "snr_in_db": 9.751462875131004,
+          "snr_out_db": 9.458269901768764,
+          "snr_gain_db": -0.29319297336224004,
+          "lag_samples": 7,
+          "lag_ms": 35.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 1.5273500139301177e-05
+        },
+        "Baseline_LPF5Hz": {
+          "rmse": 0.10605425586393617,
+          "mae": 0.09229426658856202,
+          "bias_mean": 0.005911757606774327,
+          "snr_in_db": 9.751462875131004,
+          "snr_out_db": 11.479832844076052,
+          "snr_gain_db": 1.7283699689450476,
+          "lag_samples": 5,
+          "lag_ms": 25.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 0.00023384749965771334
+        },
+        "Method1_Wiener_FIR": {
+          "rmse": 0.022193451484683817,
+          "mae": 0.01789492373296461,
+          "bias_mean": 0.0050803658464221415,
+          "snr_in_db": 9.751462875131004,
+          "snr_out_db": 25.06589790198516,
+          "snr_gain_db": 15.314435026854156,
+          "lag_samples": 0,
+          "lag_ms": 0.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 9.301599993705167e-05
+        },
+        "Method1_Wiener_Freq": {
+          "rmse": 0.013801798898020273,
+          "mae": 0.01095797799799041,
+          "bias_mean": 0.004839712251143994,
+          "snr_in_db": 9.751462875131004,
+          "snr_out_db": 29.19168096246596,
+          "snr_gain_db": 19.440218087334955,
+          "lag_samples": 0,
+          "lag_ms": 0.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 0.00010037500032922253
+        },
+        "Method2_Kalman_AR1": {
+          "rmse": 0.025975663369001478,
+          "mae": 0.02061189632318907,
+          "bias_mean": 0.004878825073777853,
+          "snr_in_db": 9.751462875131004,
+          "snr_out_db": 23.69906191672133,
+          "snr_gain_db": 13.947599041590326,
+          "lag_samples": 0,
+          "lag_ms": 0.0,
+          "coverage_95_pct": 94.6938775510204,
+          "time_ms_per_sample": 0.01171574249974583
+        }
+      },
+      "wiener_fir_rmse_theory": 0.02245658415131157,
+      "kalman_diagnostics": {
+        "q_u_mle": 227618.51532428447,
+        "log10_qu_se": 0.04581764057320705,
+        "nis_mean": 1.041546553268833,
+        "nis_ci95": [
+          0.9383627267757367,
+          1.0635700192484443
+        ],
+        "nis_consistent": true,
+        "ljung_box_q": 31.442037891659677,
+        "ljung_box_p": 0.0496187542219798,
+        "acf_within_95_pct": 85.0
+      }
+    },
+    "S4_NonStat_120s": {
+      "metrics": {
+        "Baseline_Raw": {
+          "rmse": 0.12697611315400792,
+          "mae": 0.12082951444009979,
+          "bias_mean": 0.1208179916021148,
+          "snr_in_db": 8.038716825515985,
+          "snr_out_db": 8.038716825515985,
+          "snr_gain_db": 0.0,
+          "lag_samples": 0,
+          "lag_ms": 0.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 0.0
+        },
+        "Baseline_BiasCal": {
+          "rmse": 0.03916211258899192,
+          "mae": 0.03124048661554715,
+          "bias_mean": 0.0027793606282989045,
+          "snr_in_db": 8.038716825515985,
+          "snr_out_db": 18.255835168839972,
+          "snr_gain_db": 10.217118343323987,
+          "lag_samples": 0,
+          "lag_ms": 0.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 4.1079166142784135e-07
+        },
+        "Baseline_MA15": {
+          "rmse": 0.0995928506815128,
+          "mae": 0.07525356282941915,
+          "bias_mean": 0.0028816138235759708,
+          "snr_in_db": 8.038716825515985,
+          "snr_out_db": 10.148594131659936,
+          "snr_gain_db": 2.10987730614395,
+          "lag_samples": 7,
+          "lag_ms": 35.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 4.280624996984746e-06
+        },
+        "Baseline_LPF5Hz": {
+          "rmse": 0.08132575911617103,
+          "mae": 0.06226287899126076,
+          "bias_mean": 0.0028764620941019257,
+          "snr_in_db": 8.038716825515985,
+          "snr_out_db": 11.908594886089093,
+          "snr_gain_db": 3.8698780605731073,
+          "lag_samples": 6,
+          "lag_ms": 30.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 0.00023924212500029776
+        },
+        "Method1_Wiener_FIR": {
+          "rmse": 0.019745768435612626,
+          "mae": 0.015781944468808696,
+          "bias_mean": 0.0027743559615417512,
+          "snr_in_db": 8.038716825515985,
+          "snr_out_db": 24.203676609743574,
+          "snr_gain_db": 16.16495978422759,
+          "lag_samples": 0,
+          "lag_ms": 0.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 5.6976625008549796e-05
+        },
+        "Method1_Wiener_Freq": {
+          "rmse": 0.008723535937059807,
+          "mae": 0.006514862724555143,
+          "bias_mean": 0.002745457712217752,
+          "snr_in_db": 8.038716825515985,
+          "snr_out_db": 31.299306311799384,
+          "snr_gain_db": 23.2605894862834,
+          "lag_samples": 0,
+          "lag_ms": 0.0,
+          "coverage_95_pct": null,
+          "time_ms_per_sample": 4.732250003295727e-05
+        },
+        "Method2_Kalman_AR1": {
+          "rmse": 0.023814485584153167,
+          "mae": 0.019041424496897056,
+          "bias_mean": 0.0027727426308124317,
+          "snr_in_db": 8.038716825515985,
+          "snr_out_db": 22.57633330655044,
+          "snr_gain_db": 14.537616481034453,
+          "lag_samples": 0,
+          "lag_ms": 0.0,
+          "coverage_95_pct": 95.24207011686143,
+          "time_ms_per_sample": 0.012214930499984197
+        }
+      },
+      "wiener_fir_rmse_theory": 0.01959066668971909,
+      "kalman_diagnostics": {
+        "q_u_mle": 77788.66219432461,
+        "log10_qu_se": 0.014442363622244528,
+        "nis_mean": 0.9786129823292461,
+        "nis_ci95": [
+          0.9821723098914477,
+          1.0179858110026505
+        ],
+        "nis_consistent": false,
+        "ljung_box_q": 123.46515848161258,
+        "ljung_box_p": 6.483931027092158e-17,
+        "acf_within_95_pct": 45.0
+      }
+    }
+  },
+  "monte_carlo": {
+    "S1_Static_10s": {
+      "Baseline_Raw": {
+        "rmse_mean": 0.12663637998421598,
+        "rmse_std": 0.0014156698838136848,
+        "snr_gain_mean": 0.0,
+        "snr_gain_std": 0.0,
+        "n_runs": 20
+      },
+      "Baseline_BiasCal": {
+        "rmse_mean": 0.03921990532328083,
+        "rmse_std": 0.0005294085387377002,
+        "snr_gain_mean": 10.18127565215438,
+        "snr_gain_std": 0.13923968008712906,
+        "n_runs": 20
+      },
+      "Baseline_MA15": {
+        "rmse_mean": 0.010196160087894233,
+        "rmse_std": 0.0006594418715717835,
+        "snr_gain_mean": 21.89903609028122,
+        "snr_gain_std": 0.4972002166317463,
+        "n_runs": 20
+      },
+      "Baseline_LPF5Hz": {
+        "rmse_mean": 0.010682021889876155,
+        "rmse_std": 0.0005950619338563716,
+        "snr_gain_mean": 21.490201894261553,
+        "snr_gain_std": 0.412518052644292,
+        "n_runs": 20
+      },
+      "Method1_Wiener_FIR": {
+        "rmse_mean": 0.004955230357770682,
+        "rmse_std": 0.0009439432042393334,
+        "snr_gain_mean": 28.29746642261397,
+        "snr_gain_std": 1.6298303113770134,
+        "n_runs": 20
+      },
+      "Method1_Wiener_Freq": {
+        "rmse_mean": 0.012094302653046982,
+        "rmse_std": 0.0007403172151139984,
+        "snr_gain_mean": 20.41469843870107,
+        "snr_gain_std": 0.5033148708053586,
+        "n_runs": 20
+      },
+      "Method2_Kalman_AR1": {
+        "rmse_mean": 0.007386144322041299,
+        "rmse_std": 0.0009971501978762,
+        "snr_gain_mean": 24.75832368947758,
+        "snr_gain_std": 1.140956962298201,
+        "n_runs": 20,
+        "coverage_95_mean": 95.94642857142858
+      }
+    },
+    "S2_Sinusoidal_10s": {
+      "Baseline_Raw": {
+        "rmse_mean": 0.12662036209361616,
+        "rmse_std": 0.0014155438916753213,
+        "snr_gain_mean": 0.0,
+        "snr_gain_std": 0.0,
+        "n_runs": 20
+      },
+      "Baseline_BiasCal": {
+        "rmse_mean": 0.039241432505479304,
+        "rmse_std": 0.0005200781334402779,
+        "snr_gain_mean": 10.175383277518637,
+        "snr_gain_std": 0.13782490258854782,
+        "n_runs": 20
+      },
+      "Baseline_MA15": {
+        "rmse_mean": 0.06255373734050725,
+        "rmse_std": 0.0009444023646190272,
+        "snr_gain_mean": 6.125437106043819,
+        "snr_gain_std": 0.1422001989307877,
+        "n_runs": 20
+      },
+      "Baseline_LPF5Hz": {
+        "rmse_mean": 0.05643284929088149,
+        "rmse_std": 0.0009261540336712916,
+        "snr_gain_mean": 7.0200329602175655,
+        "snr_gain_std": 0.1498364415945388,
+        "n_runs": 20
+      },
+      "Method1_Wiener_FIR": {
+        "rmse_mean": 0.014232884872750966,
+        "rmse_std": 0.000674599790381436,
+        "snr_gain_mean": 18.992802740671316,
+        "snr_gain_std": 0.35332584701656267,
+        "n_runs": 20
+      },
+      "Method1_Wiener_Freq": {
+        "rmse_mean": 0.012684286799352998,
+        "rmse_std": 0.0007281111150375066,
+        "snr_gain_mean": 19.998127103950143,
+        "snr_gain_std": 0.477881809950759,
+        "n_runs": 20
+      },
+      "Method2_Kalman_AR1": {
+        "rmse_mean": 0.016304179478307382,
+        "rmse_std": 0.0007178266302277961,
+        "snr_gain_mean": 17.811558578098637,
+        "snr_gain_std": 0.3532042542768784,
+        "n_runs": 20,
+        "coverage_95_mean": 95.12244897959184
+      }
+    },
+    "S3_MultiFreq_10s": {
+      "Baseline_Raw": {
+        "rmse_mean": 0.126626997326361,
+        "rmse_std": 0.0014141092538399967,
+        "snr_gain_mean": 0.0,
+        "snr_gain_std": 0.0,
+        "n_runs": 20
+      },
+      "Baseline_BiasCal": {
+        "rmse_mean": 0.03926336347558549,
+        "rmse_std": 0.0005344219999850344,
+        "snr_gain_mean": 10.1710256454836,
+        "snr_gain_std": 0.1408095008486598,
+        "n_runs": 20
+      },
+      "Baseline_MA15": {
+        "rmse_mean": 0.1326421039713091,
+        "rmse_std": 0.000813675094594568,
+        "snr_gain_mean": -0.40346018011488105,
+        "snr_gain_std": 0.10097247876850758,
+        "n_runs": 20
+      },
+      "Baseline_LPF5Hz": {
+        "rmse_mean": 0.1049283980802691,
+        "rmse_std": 0.00078289992547038,
+        "snr_gain_mean": 1.6323811851431178,
+        "snr_gain_std": 0.10488830520377676,
+        "n_runs": 20
+      },
+      "Method1_Wiener_FIR": {
+        "rmse_mean": 0.02140352234787763,
+        "rmse_std": 0.0007350931932903666,
+        "snr_gain_mean": 15.445125182441084,
+        "snr_gain_std": 0.24484837557196115,
+        "n_runs": 20
+      },
+      "Method1_Wiener_Freq": {
+        "rmse_mean": 0.013163523483751896,
+        "rmse_std": 0.000761382218568995,
+        "snr_gain_mean": 19.676746203040146,
+        "snr_gain_std": 0.4916079325030263,
+        "n_runs": 20
+      },
+      "Method2_Kalman_AR1": {
+        "rmse_mean": 0.02558464308129319,
+        "rmse_std": 0.0006778715863305367,
+        "snr_gain_mean": 13.893311522964177,
+        "snr_gain_std": 0.19171462624042193,
+        "n_runs": 20,
+        "coverage_95_mean": 95.11989795918369
+      }
+    },
+    "S4_NonStat_120s": {
+      "Baseline_Raw": {
+        "rmse_mean": 0.12682662318633414,
+        "rmse_std": 0.0013095054712091462,
+        "snr_gain_mean": 0.0,
+        "snr_gain_std": 0.0,
+        "n_runs": 10
+      },
+      "Baseline_BiasCal": {
+        "rmse_mean": 0.03937952508102318,
+        "rmse_std": 0.00023936183611534235,
+        "snr_gain_mean": 10.158527509899725,
+        "snr_gain_std": 0.05653692456408777,
+        "n_runs": 10
+      },
+      "Baseline_MA15": {
+        "rmse_mean": 0.09968007831017277,
+        "rmse_std": 0.0002157049982311338,
+        "snr_gain_mean": 2.0916434188706665,
+        "snr_gain_std": 0.08377281378565762,
+        "n_runs": 10
+      },
+      "Baseline_LPF5Hz": {
+        "rmse_mean": 0.08137991555009008,
+        "rmse_std": 0.00021588942080170496,
+        "snr_gain_mean": 3.8534753370519477,
+        "snr_gain_std": 0.08293877075965356,
+        "n_runs": 10
+      },
+      "Method1_Wiener_FIR": {
+        "rmse_mean": 0.019873593403914626,
+        "rmse_std": 0.0004073403819114904,
+        "snr_gain_mean": 16.099904816497094,
+        "snr_gain_std": 0.13413719866887266,
+        "n_runs": 10
+      },
+      "Method1_Wiener_Freq": {
+        "rmse_mean": 0.0090543875281309,
+        "rmse_std": 0.0005101185813355348,
+        "snr_gain_mean": 22.93898550409773,
+        "snr_gain_std": 0.4090828817723187,
+        "n_runs": 10
+      },
+      "Method2_Kalman_AR1": {
+        "rmse_mean": 0.023996098267864613,
+        "rmse_std": 0.0003780733671235689,
+        "snr_gain_mean": 14.461953035548671,
+        "snr_gain_std": 0.10462749220312233,
+        "n_runs": 10,
+        "coverage_95_mean": 94.92278797996661
+      }
+    }
+  },
+  "stress_tests": {
+    "white_noise_sweep": {
+      "scales": [
+        0.5,
+        1.0,
+        2.0,
+        4.0
+      ],
+      "Baseline_BiasCal": [
+        0.02069119572550709,
+        0.041184090340758664,
+        0.08233538072281765,
+        0.16469207056668544
+      ],
+      "Baseline_MA15": [
+        0.1331631214649718,
+        0.1341712391111115,
+        0.13698703530139394,
+        0.14549612786181723
+      ],
+      "Baseline_LPF5Hz": [
+        0.10513501992579546,
+        0.10610364405199507,
+        0.109085572573888,
+        0.11873190850280481
+      ],
+      "Method1_Wiener_FIR": [
+        0.012940350313896575,
+        0.023592907728526298,
+        0.043052443004702984,
+        0.07904179583515661
+      ],
+      "Method2_Kalman_AR1": [
+        0.014852126988370776,
+        0.02751414292694312,
+        0.05154215863045704,
+        0.09685902645867699
+      ]
+    },
+    "drift_sweep": {
+      "scales": [
+        0.0,
+        1.0,
+        5.0,
+        15.0,
+        30.0
+      ],
+      "Baseline_BiasCal": [
+        0.03926055288088424,
+        0.03927130019045412,
+        0.03938332719919212,
+        0.04016178376411035,
+        0.04254218426236833
+      ],
+      "Baseline_MA15": [
+        0.09968417859375336,
+        0.09968670703483981,
+        0.09972719694149992,
+        0.10003135304676905,
+        0.10101055825754694
+      ],
+      "Baseline_LPF5Hz": [
+        0.08136403454530687,
+        0.0813671460022534,
+        0.08141762588899108,
+        0.08179050640963284,
+        0.08298576700525427
+      ],
+      "Method1_Wiener_FIR": [
+        0.01980496061624482,
+        0.019822448989365433,
+        0.020040663764061478,
+        0.021494408505369336,
+        0.025504985491603016
+      ],
+      "Method2_Kalman_AR1": [
+        0.023949772567179756,
+        0.023965695593585697,
+        0.024149675921831697,
+        0.02538993603970526,
+        0.028937711321678872
+      ]
+    }
+  }
+}
