@@ -456,9 +456,10 @@ def _fit_allan_variance_lm(
     ub = np.log([n_init * 5.0, 1.0, duration_s * 2.0, 1.0])
 
     starts = [
-        [n_init, b_guess, tb_guess_base, k_guess],
-        [n_init, b_guess * 0.7, max(20.0, tb_guess_base * 0.5), k_guess * 1.5],
-        [n_init, b_guess * 1.2, min(duration_s, tb_guess_base * 2.0), k_guess * 0.5],
+        [n_init, b_guess, max(10.0, tb_guess_base), k_guess],
+        [n_init, b_guess * 1.2, 30.0, k_guess * 0.7],
+        [n_init, b_guess * 1.5, 100.0, k_guess * 0.5],
+        [n_init, b_guess * 1.5, 250.0, k_guess * 0.3],
     ]
 
     for p0_lin in starts:
