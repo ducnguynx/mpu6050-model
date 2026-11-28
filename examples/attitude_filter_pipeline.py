@@ -330,30 +330,57 @@ def plot_fig1_dual_assumptions(
 
 
 def plot_fig2_gyro_allan(noise_model: AttitudeNoiseModel, save_path: Path) -> None:
-    """Figure 2: Gyroscope X-axis Allan deviation black-box identification for Kalman AR(1) bias."""
+    """Figure 2: Dual-sensor Allan deviation black-box identification (Left: Accel Roll-angle, Right: Gyro X-rate)."""
+    am = noise_model.accel_angle_model
     gm = noise_model.gyro_rate_model
-    fig, ax = plt.subplots(figsize=(9.6, 6.0))
-    tau = gm.tau
-    ax.loglog(tau, gm.adev_emp, color="#1f77b4", linewidth=2.0, label=r"Empirical Overlapping ADEV $\hat{\sigma}_A(\tau)$")
-    ax.fill_between(
-        tau,
+    fig, (ax_a, ax_g) = plt.subplots(1, 2, figsize=(13.2, 5.4))
+
+    # Left: Accelerometer Roll-angle ADEV [rad]
+    tau_a = am.tau
+    ax_a.loglog(tau_a, am.adev_emp, color="#ff7f0e", linewidth=2.0, label=r"Empirical ADEV $\hat{\sigma}_{A,\theta}(\tau)$")
+    ax_a.fill_between(
+        tau_a,
+        np.maximum(am.adev_emp - 1.96 * am.adev_se, 1e-9),
+        am.adev_emp + 1.96 * am.adev_se,
+        color="#ff7f0e",
+        alpha=0.2,
+        label=r"95% Band ($\pm 1.96\,\mathrm{SE}$)",
+    )
+    ax_a.loglog(tau_a, am.adev_fit, "k--", linewidth=1.7, label="Weighted LM Fit (Total)")
+    ca = am.adev_fit_components
+    ax_a.loglog(tau_a, np.sqrt(ca["white_noise"]), color="#2ca02c", linestyle=":", linewidth=1.3, label=f"White: $\\hat{{N}}_{{\\theta_a}} = {am.N_av_hat:.2e}$")
+    ax_a.loglog(tau_a, np.sqrt(ca["gauss_markov"]), color="#1f77b4", linestyle="-.", linewidth=1.3, label=f"GM Bias: $\\hat{{B}}_{{\\theta_a}} = {am.B_av_hat:.2e}$")
+    ax_a.loglog(tau_a, np.sqrt(ca["random_walk"]), color="#d62728", linestyle=":", linewidth=1.3, label=f"Drift: $\\hat{{K}}_{{\\theta_a}} = {am.K_av_hat:.2e}$")
+    ax_a.set_xlabel(r"Averaging Cluster Time $\tau$ [s]")
+    ax_a.set_ylabel(r"Accel Roll-Angle ADEV $\sigma_A(\tau)$ [rad]")
+    ax_a.set_title("(a) Accelerometer Roll-Angle Channel (for $\\hat{R}_\\theta$ & Wiener PSD)", fontsize=9.8, fontweight="bold")
+    ax_a.grid(True, which="both", linestyle=":", alpha=0.6)
+    ax_a.legend(fontsize=7.8, loc="best")
+
+    # Right: Gyroscope X-axis ADEV [rad/s]
+    tau_g = gm.tau
+    ax_g.loglog(tau_g, gm.adev_emp, color="#1f77b4", linewidth=2.0, label=r"Empirical ADEV $\hat{\sigma}_{A,\omega}(\tau)$")
+    ax_g.fill_between(
+        tau_g,
         np.maximum(gm.adev_emp - 1.96 * gm.adev_se, 1e-9),
         gm.adev_emp + 1.96 * gm.adev_se,
         color="#1f77b4",
         alpha=0.2,
-        label=r"95% Confidence Band ($\pm 1.96\,\mathrm{SE}$)",
+        label=r"95% Band ($\pm 1.96\,\mathrm{SE}$)",
     )
-    ax.loglog(tau, gm.adev_fit, "k--", linewidth=1.8, label="Black-Box Weighted LM Fit (Total)")
-    comps = gm.adev_fit_components
-    ax.loglog(tau, np.sqrt(comps["white_noise"]), color="#2ca02c", linestyle=":", linewidth=1.4, label=f"White Noise (ARW): $\\hat{{N}}_g = {gm.N_av_hat:.2e} \\pm {gm.N_av_se:.1e}$")
-    ax.loglog(tau, np.sqrt(comps["gauss_markov"]), color="#ff7f0e", linestyle="-.", linewidth=1.4, label=f"AR(1) GM Bias: $\\hat{{B}}_g = {gm.B_av_hat:.2e}$, $\\hat{{T}}_B = {gm.TB_av_hat:.1f}$ s")
-    ax.loglog(tau, np.sqrt(comps["random_walk"]), color="#d62728", linestyle=":", linewidth=1.4, label=f"Bias Drift (RRW): $\\hat{{K}}_g = {gm.K_av_hat:.2e}$")
-    ax.set_xlabel(r"Averaging Cluster Time $\tau$ [s]")
-    ax.set_ylabel(r"Gyroscope X-Axis Allan Deviation $\sigma_A(\tau)$ [rad/s]")
-    ax.set_title("Step 2: Black-Box Gyroscope Stochastic Identification via Allan Deviation (for Kalman AR(1) Model)", fontsize=10.4, fontweight="bold")
-    ax.grid(True, which="both", linestyle=":", alpha=0.6)
-    ax.legend(fontsize=8.3, loc="best")
-    fig.tight_layout()
+    ax_g.loglog(tau_g, gm.adev_fit, "k--", linewidth=1.7, label="Weighted LM Fit (Total)")
+    cg = gm.adev_fit_components
+    ax_g.loglog(tau_g, np.sqrt(cg["white_noise"]), color="#2ca02c", linestyle=":", linewidth=1.3, label=f"ARW: $\\hat{{N}}_g = {gm.N_av_hat:.2e}$")
+    ax_g.loglog(tau_g, np.sqrt(cg["gauss_markov"]), color="#ff7f0e", linestyle="-.", linewidth=1.3, label=f"GM Bias: $\\hat{{B}}_g = {gm.B_av_hat:.2e}$, $\\hat{{T}}_B = {gm.TB_av_hat:.1f}$ s")
+    ax_g.loglog(tau_g, np.sqrt(cg["random_walk"]), color="#d62728", linestyle=":", linewidth=1.3, label=f"RRW: $\\hat{{K}}_g = {gm.K_av_hat:.2e}$")
+    ax_g.set_xlabel(r"Averaging Cluster Time $\tau$ [s]")
+    ax_g.set_ylabel(r"Gyroscope X-Axis ADEV $\sigma_A(\tau)$ [rad/s]")
+    ax_g.set_title("(b) Gyroscope X-Rate Channel (for $\\hat{R}_\\omega$ & Kalman Bias $\\hat{q}_b$)", fontsize=9.8, fontweight="bold")
+    ax_g.grid(True, which="both", linestyle=":", alpha=0.6)
+    ax_g.legend(fontsize=7.8, loc="best")
+
+    fig.suptitle("Step 2: Dual-Sensor Black-Box Stochastic Identification via Overlapping Allan Deviation", fontsize=11.0, fontweight="bold")
+    fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.94))
     save_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(save_path, dpi=150)
     plt.close(fig)
